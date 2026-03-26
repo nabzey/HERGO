@@ -1,0 +1,10 @@
+.toolbar { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 2rem; flex-wrap: wrap; }
+.searchWrap { display: flex; align-items: center; gap: 0.5rem; background: rgba(28,25,22,0.7); border: 1.5px solid var(--color-border); border-radius: var(--radius-full); padding: 0.5rem 1rem; flex: 1; min-width: 220px; transition: border-color var(--transition-fast); }
+.searchWrap:focus-within { border-color: var(--color-primary); }
+.searchIcon { color: var(--color-text-light); flex-shrink: 0; }
+.searchInput { background: transparent; border: none; font-size: var(--font-size-sm); color: var(--color-text-dark); outline: none; width: 100%; }
+.searchInput::placeholder { color: var(--color-text-light); }
+.filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.filterBtn { padding: 0.4rem 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-gray); background: transparent; cursor: pointer; font-family: var(--font-family); transition: all var(--transition-fast); }
+.filterBtn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.filterBtnActive { border-color: var(--color-primary); background: rgba(201,165,112,0.1); color: var(--color-primary); font-weight: 700; }

@@ -1,0 +1,24 @@
+/* =============================================
+   Validation des Logements
+   ============================================= */
+.list { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem 2rem 3rem; }
+.empty { text-align: center; padding: 4rem 2rem; color: var(--color-text-gray); font-size: var(--font-size-base); }
+.card { display: grid; grid-template-columns: 180px 1fr auto; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; transition: box-shadow var(--transition-normal); }
+.card:hover { box-shadow: var(--shadow-card-hover); }
+.cardImg { width: 180px; height: 140px; overflow: hidden; flex-shrink: 0; }
+.img { width: 100%; height: 100%; object-fit: cover; }
+.cardBody { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; justify-content: center; }
+.badgeRow { display: flex; gap: 0.4rem; margin-bottom: 0.15rem; }
+.name { font-size: var(--font-size-base); font-weight: 700; color: var(--color-text-dark); }
+.meta { font-size: var(--font-size-xs); color: var(--color-text-gray); }
+.meta strong { color: var(--color-text-medium); }
+.price { font-size: var(--font-size-sm); font-weight: 700; color: var(--color-primary); }
+.submitDate { font-size: var(--font-size-xs); color: var(--color-text-light); }
+.actions { display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; padding: 1rem 1.25rem; border-left: 1px solid var(--color-border); }
+.viewBtn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.875rem; border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-gray); background: transparent; cursor: pointer; font-family: var(--font-family); transition: all var(--transition-fast); white-space: nowrap; }
+.viewBtn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.approveBtn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.875rem; border: 1px solid rgba(100,200,120,0.2); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700; background: rgba(100,200,120,0.12); color: #7ec88a; cursor: pointer; font-family: var(--font-family); transition: background var(--transition-fast); white-space: nowrap; }
+.approveBtn:hover { background: rgba(100,200,120,0.22); }
+.rejectBtn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.875rem; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700; background: rgba(220,80,80,0.1); color: #e07070; border: 1px solid rgba(220,80,80,0.2); cursor: pointer; font-family: var(--font-family); transition: background var(--transition-fast); white-space: nowrap; }
+.rejectBtn:hover { background: rgba(220,80,80,0.18); }
+@media (max-width: 700px) { .card { grid-template-columns: 1fr; } .cardImg { width: 100%; height: 160px; } .actions { border-left: none; border-top: 1px solid var(--color-border); flex-direction: row; flex-wrap: wrap; } }

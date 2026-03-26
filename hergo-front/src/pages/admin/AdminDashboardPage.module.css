@@ -1,0 +1,29 @@
+/* =============================================
+   Admin Dashboard — Charts
+   ============================================= */
+.chartsRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 0 2rem 1rem; }
+.chartCard { background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+.chartTitle { display: flex; align-items: center; gap: 0.4rem; font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-medium); }
+
+/* Mini bar chart */
+.miniBarChart { display: flex; align-items: flex-end; gap: 0.5rem; height: 80px; padding-top: 0.5rem; }
+.barGroup { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; flex: 1; height: 100%; }
+.bar { width: 100%; background: var(--gradient-primary); border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.4s ease; }
+.barLabel { font-size: 0.65rem; color: var(--color-text-gray); }
+
+/* Pie section (CSS bars) */
+.pieSection { display: flex; flex-direction: column; gap: 0.75rem; }
+.pieRow { display: flex; align-items: center; gap: 0.5rem; }
+.pieDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pieLabel { font-size: var(--font-size-xs); color: var(--color-text-gray); width: 70px; }
+.pieBar { flex: 1; height: 6px; background: rgba(201,165,112,0.08); border-radius: 3px; overflow: hidden; }
+.pieBarFill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.pieCount { font-size: var(--font-size-xs); font-weight: 700; color: var(--color-text-medium); width: 20px; text-align: right; }
+
+/* Revenue list */
+.revenueList { display: flex; flex-direction: column; gap: 0.65rem; }
+.revenueRow { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(201,165,112,0.06); }
+.revMois { font-size: var(--font-size-sm); color: var(--color-text-gray); }
+.revVal { font-size: var(--font-size-sm); font-weight: 700; color: var(--color-primary); }
+
+@media (max-width: 900px) { .chartsRow { grid-template-columns: 1fr; } }

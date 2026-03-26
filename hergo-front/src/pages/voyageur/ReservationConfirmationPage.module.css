@@ -1,0 +1,236 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+}
+
+.inner {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header */
+.header {
+  margin-bottom: 2rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-gray);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.backLink:hover {
+  color: var(--color-primary);
+}
+
+/* Confirmation Card */
+.confirmationCard {
+  background-color: var(--color-card-bg);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  margin-bottom: 2rem;
+}
+
+.iconWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.confirmIcon {
+  color: var(--color-primary);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--color-text-gray);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Reservation Info */
+.reservationInfo {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  text-align: left;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.infoLabel {
+  color: var(--color-text-gray);
+}
+
+.infoValue {
+  color: var(--color-text);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-family);
+}
+
+.primaryBtn {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+}
+
+.primaryBtn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.secondaryBtn {
+  background-color: transparent;
+  color: var(--color-text-gray);
+  border: 1px solid var(--color-border);
+}
+
+.secondaryBtn:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border-color: var(--color-text-gray);
+}
+
+/* Email Notice */
+.emailNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(201, 165, 112, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(201, 165, 112, 0.2);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.emailIcon {
+  font-size: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.emailText {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-text-gray);
+  line-height: 1.6;
+}
+
+.emailText strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Additional Info */
+.additionalInfo {
+  background-color: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.infoTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+
+.infoList {
+  display: grid;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-gray);
+}
+
+.infoItem {
+  display: flex;
+  gap: 0.5rem;
+  line-height: 1.6;
+}
+
+.infoItem strong {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .inner {
+    padding: 1rem;
+  }
+  
+  .confirmationCard {
+    padding: 2rem 1rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .actionButtons {
+    grid-template-columns: 1fr;
+  }
+}

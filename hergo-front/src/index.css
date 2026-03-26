@@ -1,0 +1,227 @@
+/* ===========================
+   Variables de design globales — Dark Villa Theme
+   =========================== */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Couleurs primaires — Or chaud */
+  --color-primary: #c9a570;
+  --color-primary-dark: #a8823d;
+  --color-primary-light: rgba(201, 165, 112, 0.15);
+
+  /* Couleurs secondaires */
+  --color-secondary: #9b8060;
+  --color-secondary-dark: #7a6040;
+
+  /* Textes — Crème et marron doux */
+  --color-text-dark: #f0ebe3;
+  --color-text-medium: #cfc4b8;
+  --color-text-gray: #a09080;
+  --color-text-light: #706050;
+
+  /* Fond & surfaces — Brun foncé chaud */
+  --color-white: #f5f0e8;
+  --color-bg-page: #1c1917;
+  --color-bg-light: #2a2420;
+  --color-surface: #252019;
+  --color-bg-section: #1c1917;
+  --color-bg-alt: #231f1c;
+
+  /* Icônes & bordures */
+  --color-icon-bg: rgba(201, 165, 112, 0.12);
+  --color-border: rgba(201, 165, 112, 0.18);
+
+  /* Footer */
+  --color-footer-bg: #100e0c;
+
+  /* Dégradés */
+  --gradient-primary: linear-gradient(135deg, #c9a570 0%, #8b5a2b 100%);
+  --gradient-logo: linear-gradient(135deg, #c9a570 0%, #e0b07a 100%);
+  --gradient-hero-overlay: linear-gradient(
+    to bottom,
+    rgba(12, 9, 6, 0.1) 0%,
+    rgba(12, 9, 6, 0.72) 100%
+  );
+
+  /* Typographie */
+  --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-display: 'Cormorant Garamond', Georgia, serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+
+  /* Espacements */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  --spacing-4xl: 6rem;
+
+  /* Bordures */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* Ombres */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 10px 36px rgba(0, 0, 0, 0.55);
+  --shadow-navbar: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-btn: 0 4px 14px rgba(201, 165, 112, 0.35);
+
+  /* Transitions */
+  --transition-fast: 0.18s ease;
+  --transition-normal: 0.28s ease;
+}
+
+/* ===========================
+   Reset & Base
+   =========================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-dark);
+  background-color: var(--color-bg-page);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: block;
+  place-items: unset;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-family);
+  border: none;
+  outline: none;
+  background: none;
+}
+
+input, select {
+  font-family: var(--font-family);
+  outline: none;
+}
+
+ul {
+  list-style: none;
+}
+
+/* ===========================
+   Classes utilitaires communes
+   =========================== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+}
+
+.section-title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-3xl);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 0.02em;
+}
+
+.section-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-text-gray);
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.75rem 1.75rem;
+  background-color: var(--color-primary);
+  color: #1c1917;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-btn);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.75rem 1.75rem;
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-outline-white {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.75rem 1.75rem;
+  background-color: transparent;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-outline-white:hover {
+  background-color: var(--color-white);
+  color: #1c1917;
+}

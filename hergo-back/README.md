@@ -1,0 +1,185 @@
+# Hebergo Backend (API Express + Prisma)
+
+Backend Node.js/Express pour la plateforme de location de logements touristiques **Hebergo**.
+
+Ce projet expose une API REST sécurisée qui gère :
+- Les utilisateurs (voyageurs, hôtes, admins)
+- Les logements (création, validation, publication)
+- Les réservations (demande, confirmation, annulation)
+- Les avis (reviews)
+- Les notifications (système et utilisateur)
+
+---
+
+## 🚀 Démarrage (en local)
+
+### 1) Prérequis
+
+- Node.js >= 14.17
+- MySQL >= 5.7
+- npm ou yarn
+
+### 2) Installation
+
+1. Cloner le dépôt
+2. `npm install`
+3. Créer une base de données MySQL
+4. Copier `.env.example` en `.env` et ajuster les variables (DB, JWT...)
+5. Générer le client Prisma :
+   ```bash
+   npx prisma generate
+   ```
+6. Appliquer les migrations (local) :
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+7. Lancer le serveur :
+   ```bash
+   npm run dev
+   ```
+
+> ✅ Le serveur écoute par défaut sur `http://localhost:5000` (ou la valeur de `PORT` dans `.env`).
+
+---
+
+## 🧠 Architecture & flux de traitement (pas à pas)
+
+### 1) Point d’entrée
+
+- `core/server.js` : démarre l’application et lance le serveur.
+- `core/app.js` : configure Express, les middlewares, les routes et la gestion des erreurs.
+
+### 2) Routage
+
+- Les routes sont définies dans `routes/*.js`.
+- Chaque route appelle un contrôleur (ex: `auth.controller.js`).
+
+### 3) Contrôleurs
+
+- `controllers/*.controller.js` reçoivent `req/res`, appliquent des validations simples, et délèguent la logique métier aux services.
+
+### 4) Services
+
+- `services/*.service.js` contiennent la logique métier détaillée.
+- Les services appellent les modèles (Prisma) pour interagir avec la base de données.
+
+### 5) Modèles / Prisma
+
+- `prisma/schema.prisma` définit les tables et relations.
+- `prisma/client.js` exporte le client Prisma.
+- Les fichiers `models/*.model.js` encapsulent les requêtes Prisma.
+
+---
+
+## ✨ Exemple de traitement (création d’un logement)
+
+1. Le client envoie `POST /api/logements`.
+2. Route `routes/logement.routes.js` redirige vers `logement.controller.create`.
+3. Le middleware d’authentification (`core/middlewares/auth.middleware.js`) vérifie le JWT et injecte l’utilisateur.
+4. `logement.controller.create` appelle `logement.service.create`.
+5. `logement.service.create` utilise Prisma (`models/logement.model.js`) pour insérer une ligne en BDD.
+6. Le contrôleur retourne la réponse JSON au client.
+
+---
+
+## 🗂️ Structure du projet (arborescence)
+
+```
+hergo-back/
+├── config/                # Configuration (BDD, JWT, env)
+├── controllers/           # Requêtes entrantes -> services
+├── core/                  # Point d'entrée et setup Express
+│   ├── app.js
+│   └── server.js
+├── docs/                  # Swagger / documentation API
+├── helpers/               # Fonctions utilitaires (hash, email, notif)
+├── middleware/            # Middlewares Express (auth, erreurs)
+├── models/                # Requêtes Prisma encapsulées
+├── prisma/                # Schéma et client Prisma
+├── routes/                # Définition des endpoints
+├── services/              # Logique métier
+├── package.json
+└── README.md
+```
+
+---
+
+## 🧩 Points importants
+
+### Authentification JWT
+
+- Le token est généré dans `auth.service.js`.
+- Le middleware `core/middlewares/auth.middleware.js` vérifie le token et ajoute `req.user`.
+
+### Gestion des rôles
+
+- Certains endpoints sont réservés à `ADMIN` ou `HOTE`.
+- Le middleware d’authentification vérifie le rôle avant d’autoriser l’accès.
+
+### Notifications
+
+- Les notifications sont créées via `notification.helper.js`.
+- Les notifications sont stockées en base puis consultables via l’API.
+
+---
+
+## ✅ Routes API (résumé)
+
+### Auth
+- `POST /api/auth/register` : inscription
+- `POST /api/auth/login` : connexion
+- `GET /api/auth/me` : profil connecté
+
+### Utilisateurs
+- `GET /api/users` (admin) : liste des utilisateurs
+- `GET /api/users/:id` : détail
+- `PUT /api/users/:id` : mise à jour
+- `PUT /api/users/:id/password` : changement de mot de passe
+- `PUT /api/users/:id/role` (admin) : rôle/statut
+- `DELETE /api/users/:id` (admin)
+
+### Logements
+- `GET /api/logements` : liste
+- `GET /api/logements/:id` : détail
+- `POST /api/logements` : création (hôte)
+- `PUT /api/logements/:id` : modification
+- `DELETE /api/logements/:id` : suppression
+- `PUT /api/logements/:id/images` : images
+- `PUT /api/logements/:id/equipements` : équipements
+- `PUT /api/logements/:id/espaces` : espaces
+
+### Réservations
+- `GET /api/reservations` : liste
+- `GET /api/reservations/:id` : détail
+- `POST /api/reservations` : création
+- `PUT /api/reservations/:id/status` : statut
+- `PUT /api/reservations/:id/cancel` : annulation
+- `DELETE /api/reservations/:id` (admin)
+
+### Avis
+- `GET /api/reviews/logement/:idLogement` : avis par logement
+- `GET /api/reviews/:id` : avis par ID
+- `POST /api/reviews` : création
+- `PUT /api/reviews/:id` : modification
+- `DELETE /api/reviews/:id` : suppression
+
+### Notifications
+- `GET /api/notifications` : toutes les notifications
+- `GET /api/notifications/:id` : détail
+- `PUT /api/notifications/:id/read` : marquer lue
+- `PUT /api/notifications/read-all` : marquer toutes lues
+- `DELETE /api/notifications/:id` : suppression
+- `DELETE /api/notifications/delete-all` : suppression de toutes
+
+---
+
+## 🧪 Débogage & outils
+
+- Démarrer en mode développement : `npm run dev` (nodemon)
+- Ouvrir Prisma Studio : `npx prisma studio`
+
+---
+
+## Licence
+
+ISC

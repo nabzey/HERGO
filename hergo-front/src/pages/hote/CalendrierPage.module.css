@@ -1,0 +1,189 @@
+/* =============================================
+   CalendrierPage — Disponibilité hôte
+   ============================================= */
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-gray);
+}
+
+.dotConfirmed {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #7ec88a;
+  flex-shrink: 0;
+}
+
+.dotPending {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.dotFree {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+/* Calendar wrapper */
+.calendarWrapper {
+  margin: 0 2rem 1.5rem;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.calTitle {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--color-text-dark);
+  letter-spacing: 0.02em;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-gray);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.navBtn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+/* Grid */
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calDayHeader {
+  padding: 0.6rem 0;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(201, 165, 112, 0.04);
+}
+
+.calCell {
+  min-height: 56px;
+  border-right: 1px solid rgba(201, 165, 112, 0.06);
+  border-bottom: 1px solid rgba(201, 165, 112, 0.06);
+  position: relative;
+}
+
+.calCell:nth-child(7n) {
+  border-right: none;
+}
+
+.calCellDay {
+  cursor: default;
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  transition: background-color var(--transition-fast);
+}
+
+.calCellDay:hover {
+  background-color: rgba(201, 165, 112, 0.04);
+}
+
+.calCellToday {
+  background-color: rgba(201, 165, 112, 0.08) !important;
+}
+
+.calCellToday .dayNum {
+  background: var(--color-primary);
+  color: #1c1917;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.calCellConfirmed {
+  background-color: rgba(100, 200, 120, 0.08);
+  border-bottom-color: rgba(100, 200, 120, 0.15);
+}
+
+.calCellPending {
+  background-color: rgba(201, 165, 112, 0.1);
+}
+
+.dayNum {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-medium);
+  line-height: 1;
+}
+
+.bookingDot {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.calCellConfirmed .bookingDot {
+  color: #7ec88a;
+}
+
+.calCellPending .bookingDot {
+  color: var(--color-primary);
+}
+
+@media (max-width: 700px) {
+  .calendarWrapper {
+    margin: 0 1rem 1.5rem;
+    overflow-x: auto;
+  }
+
+  .calGrid {
+    min-width: 420px;
+  }
+}
