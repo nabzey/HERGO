@@ -132,8 +132,8 @@ const reservationService = {
 
       // Créer la réservation
       const [result] = await pool.execute(`
-        INSERT INTO Reservation (idVoyageur, idLogement, dateDebut, dateFin, nombrePersonnes, prixTotal, statut)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Reservation (idVoyageur, idLogement, dateDebut, dateFin, nombrePersonnes, prixTotal, statut, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
       `, [userId, idLogement, dateDebut, dateFin, nombrePersonnes, prixTotal, 'EN_ATTENTE']);
 
       // Récupérer la réservation créé

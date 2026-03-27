@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { authApi } from '../../core/api/api';
 import styles from './AuthPage.module.css';
 
 interface LoginFormProps {
@@ -23,7 +24,12 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     setError('');
 
     try {
-      const user = await login(email, password);
+      const response = await authApi.login({ email, password });
+      const user = response.user as { role: string };
+      
+      // Sauvegarder l'utilisateur et le token
+      localStorage.setItem('hergoUser', JSON.stringify(response.user));
+      localStorage.setItem('hergoToken', response.token);
       
       // Rediriger vers la page correspondant au rôle de l'utilisateur
       if (user.role === 'Voyageur') {
@@ -33,8 +39,9 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
       } else if (user.role === 'Admin') {
         navigate('/admin/dashboard');
       }
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la connexion');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de la connexion');
     } finally {
       setLoading(false);
     }

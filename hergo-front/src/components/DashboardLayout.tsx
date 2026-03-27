@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutGrid, LogOut } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import styles from './DashboardLayout.module.css';
 
 interface NavItem {
@@ -23,8 +24,15 @@ const DashboardLayout = ({
   userName = 'Fatou Seck',
   userAvatar = 'https://i.pravatar.cc/36?u=fatou',
 }: DashboardLayoutProps) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const roleLabel = role === 'hote' ? 'Espace Hôte' : 'Administration';
   const roleBadge = role === 'hote' ? styles.badgeHote : styles.badgeAdmin;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <div className={styles.layout}>
@@ -65,10 +73,10 @@ const DashboardLayout = ({
               <span className={styles.userRole}>{roleLabel}</span>
             </div>
           </div>
-          <NavLink to="/" className={styles.logoutBtn} title="Déconnexion">
+          <button onClick={handleLogout} className={styles.logoutBtn} title="Déconnexion">
             <LogOut size={16} />
             <span>Quitter</span>
-          </NavLink>
+          </button>
         </div>
       </aside>
 

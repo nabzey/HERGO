@@ -1,15 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { mockReservations } from '../../data/adminMockData';
-import type { Reservation } from '../../data/adminMockData';
+import { usersApi, reservationsApi } from '../../core/api/api';
 import styles from './MesReservationsPage.module.css';
+
+interface Reservation {
+  id: number;
+  villaName: string;
+  location: string;
+  image: string;
+  dateArrivee: string;
+  dateDepart: string;
+  nuits: number;
+  montant: string;
+  status: string;
+  avatar?: string;
+  voyageur?: string;
+}
 
 type FilterType = 'toutes' | 'confirmée' | 'en attente' | 'annulée';
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
   confirmée: { label: 'Confirmée', icon: <CheckCircle size={13} />, cls: 'green' },
   'en attente': { label: 'En attente', icon: <Clock size={13} />, cls: 'yellow' },
   annulée: { label: 'Annulée', icon: <XCircle size={13} />, cls: 'red' },
@@ -18,14 +31,69 @@ const STATUS_CONFIG = {
 const MesReservationsPage = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<FilterType>('toutes');
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        const data = await usersApi.getMyReservations() as Reservation[];
+        setReservations(data);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement des réservations');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReservations();
+  }, []);
 
   const filtered: Reservation[] =
-    filter === 'toutes' ? mockReservations : mockReservations.filter((r) => r.status === filter);
+    filter === 'toutes' ? reservations : reservations.filter((r) => r.status === filter);
+
+  const handleCancel = async (id: number) => {
+    try {
+      await reservationsApi.cancel(id);
+      setReservations(reservations.map(r =>
+        r.id === id ? { ...r, status: 'annulée' } : r
+      ));
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de l\'annulation');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p>Chargement des réservations...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
       <Navbar />
       <div className={styles.inner}>
+        {error && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
         <h1 className={styles.pageTitle}>Mes Réservations</h1>
         <p className={styles.pageSubtitle}>Retrouvez l'ensemble de vos séjours passés et à venir</p>
 
@@ -76,7 +144,7 @@ const MesReservationsPage = () => {
                   {r.status === 'en attente' && (
                     <button
                       className={styles.cancelBtn}
-                      onClick={(e) => { e.stopPropagation(); navigate(`/mes-reservations/${r.id}`); }}
+                      onClick={(e) => { e.stopPropagation(); handleCancel(r.id); }}
                     >
                       Annuler
                     </button>

@@ -111,8 +111,8 @@ const reclamationService = {
 
       // Créer la réclamation
       const [result] = await pool.execute(`
-        INSERT INTO Reclamation (idVoyageur, idLogement, sujet, description, statut)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO Reclamation (idVoyageur, idLogement, sujet, description, statut, updatedAt)
+        VALUES (?, ?, ?, ?, ?, NOW())
       `, [userId, idLogement, sujet, description, 'EN_ATTENTE']);
 
       // Récupérer la réclamation créé

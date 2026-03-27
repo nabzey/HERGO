@@ -1,23 +1,26 @@
 const { pool } = require('../config/db');
 const passwordHelper = require('../helpers/password.helper');
-const { generateToken } = require('../config/jwt');
+const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const emailHelper = require('../helpers/email.helper');
+const { AuthenticationError, ConflictError, NotFoundError } = require('../helpers/errors');
 
 const authService = {
   // Inscription
   register: async (data) => {
     try {
-      const { firstName, lastName, email, password, phone, role = 'VOYAGEUR' } = data;
+      const { name, email, password, role = 'Voyageur' } = data;
+      const [firstName, ...lastNameParts] = name.split(' ');
+      const lastName = lastNameParts.join(' ') || '';
 
       // Vérifier si l'utilisateur existe déjà
       const [existingUsers] = await pool.execute('SELECT * FROM User WHERE email = ?', [email]);
       if (existingUsers.length > 0) {
-        throw new Error('Email déjà utilisé');
+        throw new ConflictError('Email déjà utilisé');
       }
 
       // Vérifier la force du mot de passe
       if (!passwordHelper.isPasswordStrong(password)) {
-        throw new Error('Mot de passe trop faible');
+        throw new AuthenticationError('Mot de passe trop faible');
       }
 
       // Hacher le mot de passe
@@ -25,8 +28,8 @@ const authService = {
 
       // Créer l'utilisateur
       const [result] = await pool.execute(
-        'INSERT INTO User (firstName, lastName, email, password, phone, role) VALUES (?, ?, ?, ?, ?, ?)',
-        [firstName, lastName, email, hashedPassword, phone, role]
+        'INSERT INTO User (firstName, lastName, email, password, role, updatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
+        [firstName, lastName, email, hashedPassword, role]
       );
 
       const user = {
@@ -36,7 +39,6 @@ const authService = {
         email,
         role,
         status: 'ACTIF',
-        phone,
         avatar: null,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -45,10 +47,11 @@ const authService = {
       // Envoyer email de confirmation
       await emailHelper.sendRegistrationEmail(email, firstName);
 
-      // Générer le token JWT
+      // Générer les tokens JWT
       const token = generateToken({ id: user.id, email: user.email, role: user.role });
+      const refreshToken = generateRefreshToken({ id: user.id });
 
-      return { user, token };
+      return { user, token, refreshToken };
     } catch (error) {
       throw error;
     }
@@ -62,7 +65,7 @@ const authService = {
       // Vérifier si l'utilisateur existe
       const [users] = await pool.execute('SELECT * FROM User WHERE email = ?', [email]);
       if (users.length === 0) {
-        throw new Error('Email ou mot de passe incorrect');
+        throw new AuthenticationError('Email ou mot de passe incorrect');
       }
 
       const user = users[0];
@@ -70,16 +73,17 @@ const authService = {
       // Vérifier le mot de passe
       const isPasswordValid = await passwordHelper.comparePassword(password, user.password);
       if (!isPasswordValid) {
-        throw new Error('Email ou mot de passe incorrect');
+        throw new AuthenticationError('Email ou mot de passe incorrect');
       }
 
       // Vérifier le statut de l'utilisateur
       if (user.status === 'SUSPENDU') {
-        throw new Error('Compte suspendue');
+        throw new AuthenticationError('Compte suspendu');
       }
 
-      // Générer le token JWT
+      // Générer les tokens JWT
       const token = generateToken({ id: user.id, email: user.email, role: user.role });
+      const refreshToken = generateRefreshToken({ id: user.id });
 
       return {
         user: {
@@ -95,9 +99,34 @@ const authService = {
           updatedAt: user.updatedAt,
         },
         token,
+        refreshToken,
       };
     } catch (error) {
       throw error;
+    }
+  },
+
+  // Rafraîchir le token
+  refreshToken: async (refreshToken) => {
+    try {
+      const decoded = verifyRefreshToken(refreshToken);
+      
+      const [users] = await pool.execute(
+        'SELECT id, email, role FROM User WHERE id = ?',
+        [decoded.id]
+      );
+
+      if (users.length === 0) {
+        throw new AuthenticationError('Utilisateur non trouvé');
+      }
+
+      const user = users[0];
+      const newToken = generateToken({ id: user.id, email: user.email, role: user.role });
+      const newRefreshToken = generateRefreshToken({ id: user.id });
+
+      return { token: newToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      throw new AuthenticationError('Refresh token invalide');
     }
   },
 
@@ -110,7 +139,7 @@ const authService = {
       );
 
       if (users.length === 0) {
-        throw new Error('Utilisateur non trouvé');
+        throw new NotFoundError('Utilisateur non trouvé');
       }
 
       return users[0];

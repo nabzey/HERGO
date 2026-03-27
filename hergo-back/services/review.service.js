@@ -76,8 +76,8 @@ const reviewService = {
 
       // Créer l'avis
       const [result] = await pool.execute(`
-        INSERT INTO Review (idVoyageur, idLogement, note, commentaire)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO Review (idVoyageur, idLogement, note, commentaire, updatedAt)
+        VALUES (?, ?, ?, ?, NOW())
       `, [userId, idLogement, note, commentaire]);
 
       // Récupérer l'avis créé

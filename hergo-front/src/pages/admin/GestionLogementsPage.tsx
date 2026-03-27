@@ -1,9 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LayoutGrid, Users, Home, ShieldCheck, BarChart2, Search, EyeOff, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { allLogements } from '../../data/adminMockData';
+import { adminApi } from '../../core/api/api';
 import dStyles from '../../components/DashboardLayout.module.css';
 import styles from '../../pages/admin/GestionUtilisateursPage.module.css';
+
+interface Logement {
+  id: number;
+  name: string;
+  location: string;
+  hote: string;
+  type: string;
+  price: string;
+  reservations: number;
+  status: string;
+  image: string;
+}
 
 const ADMIN_LINKS = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutGrid size={16} /> },
@@ -16,19 +28,86 @@ const ADMIN_LINKS = [
 const GestionLogementsPage = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('tous');
+  const [logements, setLogements] = useState<Logement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filtered = allLogements.filter((l) => {
+  useEffect(() => {
+    const fetchLogements = async () => {
+      try {
+        const data = await adminApi.getAllLogements() as Logement[];
+        setLogements(data);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement des logements');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogements();
+  }, []);
+
+  const filtered = logements.filter((l) => {
     const matchSearch = l.name.toLowerCase().includes(search.toLowerCase()) || l.location.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === 'tous' || l.type === typeFilter;
     return matchSearch && matchType;
   });
 
+  const handlePublish = async (id: number) => {
+    try {
+      await adminApi.updateLogementStatus(id, { status: 'publié' });
+      setLogements(logements.map(l =>
+        l.id === id ? { ...l, status: 'publié' } : l
+      ));
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de la publication');
+    }
+  };
+
+  const handleHide = async (id: number) => {
+    try {
+      await adminApi.updateLogementStatus(id, { status: 'masqué' });
+      setLogements(logements.map(l =>
+        l.id === id ? { ...l, status: 'masqué' } : l
+      ));
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors du masquage');
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+        <div className={dStyles.pageHeader}>
+          <h1 className={dStyles.pageTitle}>Gestion des Logements</h1>
+          <p>Chargement des logements...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
       <div className={dStyles.pageHeader}>
         <h1 className={dStyles.pageTitle}>Gestion des Logements</h1>
-        <p className={dStyles.pageSubtitle}>{allLogements.length} logements sur la plateforme</p>
+        <p className={dStyles.pageSubtitle}>{logements.length} logements sur la plateforme</p>
       </div>
+
+      {error && (
+        <div style={{
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          fontSize: '0.875rem'
+        }}>
+          {error}
+        </div>
+      )}
 
       <div className={styles.toolbar}>
         <div className={styles.searchWrap}>
@@ -69,8 +148,8 @@ const GestionLogementsPage = () => {
                 <td>
                   <div className={dStyles.actionGroup}>
                     {l.status === 'publié'
-                      ? <button className={`${dStyles.actionBtn} ${dStyles.actionBtnDanger}`} title="Masquer"><EyeOff size={13} /></button>
-                      : <button className={`${dStyles.actionBtn} ${dStyles.actionBtnPrimary}`} title="Publier"><Eye size={13} /></button>}
+                      ? <button onClick={() => handleHide(l.id)} className={`${dStyles.actionBtn} ${dStyles.actionBtnDanger}`} title="Masquer"><EyeOff size={13} /></button>
+                      : <button onClick={() => handlePublish(l.id)} className={`${dStyles.actionBtn} ${dStyles.actionBtnPrimary}`} title="Publier"><Eye size={13} /></button>}
                   </div>
                 </td>
               </tr>

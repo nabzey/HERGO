@@ -1,8 +1,21 @@
+import { useState, useEffect } from 'react';
 import { LayoutGrid, Users, Home, ShieldCheck, BarChart2, TrendingUp } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { statsParMois } from '../../data/adminMockData';
+import { adminApi } from '../../core/api/api';
 import dStyles from '../../components/DashboardLayout.module.css';
 import styles from './StatistiquesPage.module.css';
+
+interface Stats {
+  totalUsers: number;
+  publishedLogements: number;
+  totalReservations: number;
+  totalRevenue: number;
+  statsParMois: Array<{
+    mois: string;
+    reservations: number;
+    revenus: number;
+  }>;
+}
 
 const ADMIN_LINKS = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutGrid size={16} /> },
@@ -12,22 +25,78 @@ const ADMIN_LINKS = [
   { label: 'Statistiques', href: '/admin/statistiques', icon: <BarChart2 size={16} /> },
 ];
 
-const maxReservations = Math.max(...statsParMois.map((s) => s.reservations));
-const maxRevenus = Math.max(...statsParMois.map((s) => s.revenus));
+const StatistiquesPage = () => {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-const kpiCards = [
-  { label: 'Total utilisateurs', value: '6', sub: 'dont 2 hôtes actifs' },
-  { label: 'Logements publiés', value: '3', sub: 'sur 5 créés' },
-  { label: 'Réservations totales', value: '5', sub: 'ce semestre' },
-  { label: 'Revenus générés', value: '47 M FCFA', sub: 'depuis sep. 2025' },
-];
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await adminApi.getStatistics() as Stats;
+        setStats(data);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement des statistiques');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
-const StatistiquesPage = () => (
-  <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
-    <div className={dStyles.pageHeader}>
-      <h1 className={dStyles.pageTitle}>Statistiques</h1>
-      <p className={dStyles.pageSubtitle}>Analyse de performance de la plateforme</p>
-    </div>
+  if (loading) {
+    return (
+      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+        <div className={dStyles.pageHeader}>
+          <h1 className={dStyles.pageTitle}>Statistiques</h1>
+          <p>Chargement des statistiques...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+        <div className={dStyles.pageHeader}>
+          <h1 className={dStyles.pageTitle}>Statistiques</h1>
+          <p>Aucune donnée disponible</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const maxReservations = Math.max(...stats.statsParMois.map((s) => s.reservations));
+  const maxRevenus = Math.max(...stats.statsParMois.map((s) => s.revenus));
+
+  const kpiCards = [
+    { label: 'Total utilisateurs', value: stats.totalUsers.toString(), sub: 'utilisateurs inscrits' },
+    { label: 'Logements publiés', value: stats.publishedLogements.toString(), sub: 'logements actifs' },
+    { label: 'Réservations totales', value: stats.totalReservations.toString(), sub: 'réservations effectuées' },
+    { label: 'Revenus générés', value: `${(stats.totalRevenue / 1000000).toFixed(1)} M FCFA`, sub: 'revenus totaux' },
+  ];
+
+  return (
+    <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+      <div className={dStyles.pageHeader}>
+        <h1 className={dStyles.pageTitle}>Statistiques</h1>
+        <p className={dStyles.pageSubtitle}>Analyse de performance de la plateforme</p>
+      </div>
+
+      {error && (
+        <div style={{
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          fontSize: '0.875rem'
+        }}>
+          {error}
+        </div>
+      )}
 
     {/* KPI Cards */}
     <div className={dStyles.statsGrid}>
@@ -48,7 +117,7 @@ const StatistiquesPage = () => (
           <h3 className={styles.chartTitle}><TrendingUp size={16} /> Réservations mensuelles</h3>
         </div>
         <div className={styles.barChart}>
-          {statsParMois.map((s) => (
+          {stats.statsParMois.map((s) => (
             <div key={s.mois} className={styles.barColumn}>
               <span className={styles.barValue}>{s.reservations}</span>
               <div className={styles.barTrack}>
@@ -66,7 +135,7 @@ const StatistiquesPage = () => (
           <h3 className={styles.chartTitle}><BarChart2 size={16} /> Revenus mensuels (FCFA)</h3>
         </div>
         <div className={styles.barChart}>
-          {statsParMois.map((s) => (
+          {stats.statsParMois.map((s) => (
             <div key={s.mois} className={styles.barColumn}>
               <span className={styles.barValue} style={{ fontSize: '0.65rem' }}>{(s.revenus / 1000000).toFixed(1)}M</span>
               <div className={styles.barTrack}>
@@ -122,6 +191,7 @@ const StatistiquesPage = () => (
       </div>
     </div>
   </DashboardLayout>
-);
+  );
+};
 
 export default StatistiquesPage;

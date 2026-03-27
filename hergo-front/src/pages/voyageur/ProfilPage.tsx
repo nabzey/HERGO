@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Lock, Camera, Check } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import { usersApi } from '../../core/api/api';
 import styles from './ProfilPage.module.css';
 
 type TabType = 'infos' | 'securite' | 'preferences';
@@ -9,29 +10,101 @@ type TabType = 'infos' | 'securite' | 'preferences';
 const ProfilPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('infos');
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
-    prenom: 'Amadou',
-    nom: 'Diallo',
-    email: 'amadou.diallo@gmail.com',
-    telephone: '+221 77 800 00 00',
-    ville: 'Dakar',
-    pays: 'Sénégal',
-    bio: 'Passionné de voyages et de découverte culturelle.',
+    prenom: '',
+    nom: '',
+    email: '',
+    telephone: '',
+    ville: '',
+    pays: '',
+    bio: '',
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await usersApi.getProfile() as {
+          name?: string;
+          email?: string;
+          telephone?: string;
+          ville?: string;
+          pays?: string;
+          bio?: string;
+        };
+        const nameParts = profile.name?.split(' ') || ['', ''];
+        setForm({
+          prenom: nameParts[0] || '',
+          nom: nameParts.slice(1).join(' ') || '',
+          email: profile.email || '',
+          telephone: profile.telephone || '',
+          ville: profile.ville || '',
+          pays: profile.pays || '',
+          bio: profile.bio || '',
+        });
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement du profil');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleChange = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    setError('');
+    try {
+      await usersApi.updateProfile({
+        name: `${form.prenom} ${form.nom}`,
+        email: form.email,
+        telephone: form.telephone,
+        ville: form.ville,
+        pays: form.pays,
+        bio: form.bio,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de la sauvegarde');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p>Chargement du profil...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
       <Navbar />
 
       <div className={styles.inner}>
+        {error && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
         <h1 className={styles.pageTitle}>Mon Profil</h1>
         <p className={styles.pageSubtitle}>Gérez vos informations personnelles et vos préférences</p>
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, UserCheck, CheckCircle, Phone, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { authApi } from '../../core/api/api';
 import styles from './AuthPage.module.css';
 
 type Role = 'client' | 'hote';
@@ -20,23 +22,66 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [acceptCgu, setAcceptCgu] = useState(false);
   const [telephone, setTelephone] = useState('');
   const [pieceIdentite, setPieceIdentite] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert('Les mots de passe ne correspondent pas.');
+      setError('Les mots de passe ne correspondent pas.');
       return;
     }
     if (!acceptCgu) {
-      alert("Veuillez accepter les conditions d'utilisation.");
+      setError("Veuillez accepter les conditions d'utilisation.");
       return;
     }
-    // TODO: logique d'inscription
-    console.log('Inscription :', { role, prenom, nom, email, password });
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      const userRole = role === 'client' ? 'Voyageur' : 'Hôte';
+      const response = await authApi.register({
+        name: `${prenom} ${nom}`,
+        email,
+        password,
+        role: userRole,
+      });
+      
+      // Sauvegarder l'utilisateur et le token
+      localStorage.setItem('hergoUser', JSON.stringify(response.user));
+      localStorage.setItem('hergoToken', response.token);
+      
+      // Rediriger vers la page correspondant au rôle
+      if (userRole === 'Voyageur') {
+        navigate('/profil');
+      } else if (userRole === 'Hôte') {
+        navigate('/hote/dashboard');
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de l\'inscription');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {error && (
+        <div style={{
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          fontSize: '0.875rem'
+        }}>
+          {error}
+        </div>
+      )}
       <h2 className={styles.formTitle}>Créer un compte</h2>
       <p className={styles.formSubtitle}>
         Rejoignez des milliers de voyageurs sur HERGO
@@ -263,9 +308,9 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
       </label>
 
       {/* ---- Bouton submit ---- */}
-      <button type="submit" className={styles.submitBtn}>
+      <button type="submit" className={styles.submitBtn} disabled={loading}>
         <UserCheck size={18} />
-        Créer mon compte {role === 'hote' ? 'Hôte' : 'Client'}
+        {loading ? 'Création en cours...' : `Créer mon compte ${role === 'hote' ? 'Hôte' : 'Client'}`}
       </button>
 
       {/* ---- Lien vers connexion ---- */}

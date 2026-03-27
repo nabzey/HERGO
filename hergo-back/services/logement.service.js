@@ -60,8 +60,8 @@ const logementService = {
       const { titre, description, prixJour, capacite, adresse, ville, pays, longitude, latitude, statut = 'BROUILLON' } = data;
 
       const [result] = await pool.execute(`
-        INSERT INTO Logement (titre, description, prixJour, capacite, adresse, ville, pays, longitude, latitude, statut, idProprietaire)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Logement (titre, description, prixJour, capacite, adresse, ville, pays, longitude, latitude, statut, idProprietaire, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `, [
         titre, description, parseFloat(prixJour), parseInt(capacite), adresse, ville, pays,
         longitude ? parseFloat(longitude) : null, latitude ? parseFloat(latitude) : null, statut, userId

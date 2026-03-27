@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell, ChevronLeft, CheckCircle, XCircle, Clock
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import { notificationsApi } from '../../core/api/api';
 import styles from './NotificationsPage.module.css';
 
 interface Notification {
@@ -20,6 +21,24 @@ import { useAuth } from '../../hooks/useAuth';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const data = await notificationsApi.getAll() as Notification[];
+        setNotifs(data);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement des notifications');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   const userNotifications: Notification[] = [
     {
@@ -160,16 +179,26 @@ const NotificationsPage = () => {
     }
   };
 
-  const [notifs, setNotifs] = useState<Notification[]>(getNotifications());
-  const handleMarkAllRead = () => {
-    setNotifs(notifs.map(notif => ({ ...notif, read: true })));
-
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsApi.markAllAsRead();
+      setNotifs(notifs.map(notif => ({ ...notif, read: true })));
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors du marquage des notifications');
+    }
   };
 
-  const handleMarkRead = (id: number) => {
-    setNotifs(notifs.map(notif => 
-      notif.id === id ? { ...notif, read: true } : notif
-    ));
+  const handleMarkRead = async (id: number) => {
+    try {
+      await notificationsApi.markAsRead(id);
+      setNotifs(notifs.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      ));
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors du marquage de la notification');
+    }
   };
 
   const unreadCount = notifs.filter(notif => !notif.read).length;
@@ -208,11 +237,36 @@ const NotificationsPage = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p>Chargement des notifications...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <Navbar />
       
       <div className={styles.inner}>
+        {error && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
         <div className={styles.header}>
           <Link to="/" className={styles.backLink}>
             <ChevronLeft size={14} /> Retour à l'accueil

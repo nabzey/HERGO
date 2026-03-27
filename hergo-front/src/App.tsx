@@ -15,6 +15,7 @@ import ReservationDetailsPage from './pages/voyageur/ReservationDetailsPage';
 import NotificationsPage from './pages/voyageur/NotificationsPage';
 import AvisPage from './pages/voyageur/AvisPage';
 import SettingsPage from './pages/voyageur/SettingsPage';
+import ReclamationsPage from './pages/voyageur/ReclamationsPage';
 
 // Hôte pages
 import HoteDashboardPage from './pages/hote/HoteDashboardPage';
@@ -85,6 +86,11 @@ function App() {
         <Route path="/parametres" element={
           <ProtectedRoute allowedRoles={['Voyageur']}>
             <SettingsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/reclamations" element={
+          <ProtectedRoute allowedRoles={['Voyageur']}>
+            <ReclamationsPage />
           </ProtectedRoute>
         } />
 
