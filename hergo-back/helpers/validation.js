@@ -116,13 +116,6 @@ const validate = (schemaName) => {
       req.body = validated;
       next();
     } catch (error) {
-      if (error.errors) {
-        const errors = error.errors.map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-        }));
-        return res.status(400).json({ message: 'Erreur de validation', errors });
-      }
       return res.status(400).json({ message: 'Erreur de validation' });
     }
   };
@@ -141,13 +134,6 @@ const validateQuery = (schemaName) => {
       req.query = validated;
       next();
     } catch (error) {
-      if (error.errors) {
-        const errors = error.errors.map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-        }));
-        return res.status(400).json({ message: 'Erreur de validation', errors });
-      }
       return res.status(400).json({ message: 'Erreur de validation' });
     }
   };

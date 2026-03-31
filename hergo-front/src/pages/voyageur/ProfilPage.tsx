@@ -25,23 +25,24 @@ const ProfilPage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const profile = await usersApi.getProfile() as {
-          name?: string;
+        const response = await usersApi.getProfile() as unknown as { user: {
+          firstName?: string;
+          lastName?: string;
           email?: string;
-          telephone?: string;
+          phone?: string;
           ville?: string;
           pays?: string;
           bio?: string;
-        };
-        const nameParts = profile.name?.split(' ') || ['', ''];
+        }};
+        const user = response.user;
         setForm({
-          prenom: nameParts[0] || '',
-          nom: nameParts.slice(1).join(' ') || '',
-          email: profile.email || '',
-          telephone: profile.telephone || '',
-          ville: profile.ville || '',
-          pays: profile.pays || '',
-          bio: profile.bio || '',
+          prenom: user.firstName || '',
+          nom: user.lastName || '',
+          email: user.email || '',
+          telephone: user.phone || '',
+          ville: user.ville || '',
+          pays: user.pays || '',
+          bio: user.bio || '',
         });
       } catch (err: unknown) {
         const error = err as Error;

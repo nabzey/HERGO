@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, UserCheck, CheckCircle, Phone, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from '../../core/api/api';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './AuthPage.module.css';
 
 type Role = 'client' | 'hote';
@@ -25,6 +25,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,16 +43,12 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
 
     try {
       const userRole = role === 'client' ? 'Voyageur' : 'Hôte';
-      const response = await authApi.register({
+      const user = await register({
         name: `${prenom} ${nom}`,
         email,
         password,
         role: userRole,
       });
-      
-      // Sauvegarder l'utilisateur et le token
-      localStorage.setItem('hergoUser', JSON.stringify(response.user));
-      localStorage.setItem('hergoToken', response.token);
       
       // Rediriger vers la page correspondant au rôle
       if (userRole === 'Voyageur') {

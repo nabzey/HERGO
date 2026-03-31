@@ -35,8 +35,8 @@ const GestionLogementsPage = () => {
   useEffect(() => {
     const fetchLogements = async () => {
       try {
-        const data = await adminApi.getAllLogements() as Logement[];
-        setLogements(data);
+        const response = await adminApi.getAllLogements() as unknown as { logements: Logement[] };
+        setLogements(response.logements || []);
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des logements');

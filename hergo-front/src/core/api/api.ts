@@ -7,6 +7,13 @@ interface RequestOptions {
 }
 
 const getAuthToken = (): string | null => {
+  // Essayer d'abord de récupérer le token depuis hergoToken
+  const token = localStorage.getItem('hergoToken');
+  if (token) {
+    return token;
+  }
+  
+  // Fallback: essayer de récupérer depuis hergoUser (pour compatibilité)
   const user = localStorage.getItem('hergoUser');
   if (user) {
     try {

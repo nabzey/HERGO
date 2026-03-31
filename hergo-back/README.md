@@ -183,3 +183,80 @@ hergo-back/
 ## Licence
 
 ISC
+
+
+
+
+***********************
+fichier test
+'erreur que vous rencontrez est liée au format JSON invalide. Le corps de la requête doit être du JSON valide, pas du JavaScript.
+
+Format incorrect (JavaScript)
+{
+  name: 'John Doe',
+  email: 'john@example.com',
+  password: 'Password123!',
+  role: 'Voyageur'
+}
+Format correct (JSON)
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "Password123!",
+  "role": "Voyageur"
+}
+Règles du JSON
+Les clés doivent être entre guillemets doubles "clé"
+Les valeurs string doivent être entre guillemets doubles "valeur"
+Pas d'apostrophes ' pour les strings
+Pas de virgule après le dernier élément
+Exemples de données JSON valides pour tester
+Inscription (POST /api/auth/register)
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "Password123!",
+  "role": "Voyageur"
+}
+Connexion (POST /api/auth/login)
+{
+  "email": "john@example.com",
+  "password": "Password123!"
+}
+Créer un logement (POST /api/logements)
+{
+  "titre": "Appartement Paris",
+  "description": "Bel appartement au centre-ville",
+  "prixJour": 100,
+  "capacite": 4,
+  "adresse": "123 Rue de Paris",
+  "ville": "Paris",
+  "pays": "France",
+  "longitude": 2.3522,
+  "latitude": 48.8566,
+  "statut": "BROUILLON"
+}
+Créer une réservation (POST /api/reservations)
+{
+  "idLogement": 1,
+  "dateDebut": "2024-06-01",
+  "dateFin": "2024-06-05",
+  "nombrePersonnes": 2
+}
+Comment tester avec curl
+# Inscription
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"Password123!","role":"Voyageur"}'
+
+# Connexion
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"Password123!"}'
+Comment tester avec Postman/Insomnia
+Sélectionnez la méthode POST
+Entrez l'URL (ex: http://localhost:3000/api/auth/register)
+Dans l'onglet Body, sélectionnez raw et JSON
+Collez le JSON valide
+Envoyez la requête
+Assurez-vous que le serveur backend est démarré avant de tester (npm run dev).

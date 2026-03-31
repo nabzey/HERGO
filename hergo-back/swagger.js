@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Hebergo API Documentation',
+      title: 'Hergo API Documentation',
       version: '1.0.0',
-      description: 'API documentation for Hebergo accommodation booking platform',
+      description: 'API documentation for Hergo accommodation booking platform',
     },
     components: {
       securitySchemes: {

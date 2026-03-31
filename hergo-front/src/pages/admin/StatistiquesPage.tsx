@@ -33,8 +33,8 @@ const StatistiquesPage = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await adminApi.getStatistics() as Stats;
-        setStats(data);
+        const response = await adminApi.getStatistics() as unknown as { statistics: Stats };
+        setStats(response.statistics || null);
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des statistiques');

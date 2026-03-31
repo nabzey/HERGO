@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
-import type { User } from '../data/adminMockData';
+import { authApi } from '../core/api/api';
 
 export type UserRole = 'Voyageur' | 'Hôte' | 'Admin';
 
 export interface AuthUser {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: UserRole;
-  avatar: string;
+  avatar: string | null;
+  phone: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const useAuth = () => {
@@ -18,60 +23,57 @@ export const useAuth = () => {
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà connecté (localStorage)
     const savedUser = localStorage.getItem('hergoUser');
-    if (savedUser) {
+    const token = localStorage.getItem('hergoToken');
+    
+    if (savedUser && token) {
       try {
-        setUser(JSON.parse(savedUser));
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
       } catch (error) {
         console.error('Erreur lors de la récupération de l\'utilisateur:', error);
         localStorage.removeItem('hergoUser');
+        localStorage.removeItem('hergoToken');
       }
     }
     setLoading(false);
   }, []);
 
-  const login = (email: string, password: string): Promise<AuthUser> => {
-    return new Promise((resolve, reject) => {
-      // Simulation d'authentification avec les données mock
-      const mockUsers = [
-        {
-          id: 1,
-          name: 'Amadou Diallo',
-          email: 'amadou.diallo@gmail.com',
-          role: 'Voyageur' as UserRole,
-          avatar: 'https://i.pravatar.cc/40?u=amadou',
-        },
-        {
-          id: 2,
-          name: 'Fatou Seck',
-          email: 'fatou.seck@gmail.com',
-          role: 'Hôte' as UserRole,
-          avatar: 'https://i.pravatar.cc/40?u=fatou',
-        },
-        {
-          id: 6,
-          name: 'Aissatou Fall',
-          email: 'aissatou.fall@hergo.sn',
-          role: 'Admin' as UserRole,
-          avatar: 'https://i.pravatar.cc/40?u=aissatou',
-        },
-      ];
+  const login = async (email: string, password: string): Promise<AuthUser> => {
+    try {
+      const response = await authApi.login({ email, password });
+      const userData = response.user as AuthUser;
+      
+      // Sauvegarder l'utilisateur et le token
+      localStorage.setItem('hergoUser', JSON.stringify(userData));
+      localStorage.setItem('hergoToken', response.token);
+      
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      throw error;
+    }
+  };
 
-      // Trouver l'utilisateur correspondant
-      const foundUser = mockUsers.find(u => u.email === email);
-
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem('hergoUser', JSON.stringify(foundUser));
-        resolve(foundUser);
-      } else {
-        reject(new Error('Identifiants incorrects'));
-      }
-    });
+  const register = async (data: { name: string; email: string; password: string; role: string }): Promise<AuthUser> => {
+    try {
+      const response = await authApi.register(data);
+      const userData = response.user as AuthUser;
+      
+      // Sauvegarder l'utilisateur et le token
+      localStorage.setItem('hergoUser', JSON.stringify(userData));
+      localStorage.setItem('hergoToken', response.token);
+      
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('hergoUser');
+    localStorage.removeItem('hergoToken');
   };
 
   const isAuthenticated = () => {
@@ -86,6 +88,7 @@ export const useAuth = () => {
     user,
     loading,
     login,
+    register,
     logout,
     isAuthenticated,
     hasRole,

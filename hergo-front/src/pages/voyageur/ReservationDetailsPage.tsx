@@ -1,28 +1,103 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   CalendarDays, MapPin, Users, CreditCard, CheckCircle, XCircle, ChevronLeft,
   Phone, Mail, Clock, FileText
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { mockReservations } from '../../data/adminMockData';
+import { reservationsApi } from '../../core/api/api';
 import hostImg from '../../assets/im7.jpeg';
-import type { Reservation } from '../../data/adminMockData';
 import styles from './ReservationDetailsPage.module.css';
 
+interface Reservation {
+  id: number;
+  idVoyageur: number;
+  idLogement: number;
+  dateDebut: string;
+  dateFin: string;
+  nombrePersonnes: number;
+  prixTotal: number;
+  statut: string;
+  createdAt: string;
+  updatedAt: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  titre: string;
+  ville: string;
+  pays: string;
+}
+
 const ReservationDetailsPage = () => {
-  const [reservation] = useState<Reservation>(mockReservations[0]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [isCanceling, setIsCanceling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const handleCancel = () => {
+  useEffect(() => {
+    const fetchReservation = async () => {
+      try {
+        if (!id) return;
+        const response = await reservationsApi.getById(id) as unknown as { reservation: Reservation };
+        setReservation(response.reservation);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement de la réservation');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReservation();
+  }, [id]);
+
+  const handleCancel = async () => {
+    if (!reservation) return;
     setIsCanceling(true);
-    setTimeout(() => {
-      setIsCanceling(false);
+    try {
+      await reservationsApi.cancel(reservation.id);
+      setReservation({ ...reservation, statut: 'annulée' });
       setShowCancelConfirm(false);
-    }, 1500);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de l\'annulation');
+    } finally {
+      setIsCanceling(false);
+    }
   };
+
+  const handleModify = () => {
+    if (!reservation) return;
+    navigate(`/reservation/${reservation.idLogement}`, { state: { reservation } });
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p>Chargement de la réservation...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !reservation) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p style={{ color: 'red' }}>{error || 'Réservation non trouvée'}</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -43,12 +118,12 @@ const ReservationDetailsPage = () => {
         {/* Status Badge */}
         <div className={styles.statusHeader}>
           <div className={`${styles.statusBadge} ${
-            reservation.status === 'confirmée' ? styles.badgeGreen :
-            reservation.status === 'en attente' ? styles.badgeYellow : styles.badgeRed
+            reservation.statut === 'confirmée' ? styles.badgeGreen :
+            reservation.statut === 'en attente' ? styles.badgeYellow : styles.badgeRed
           }`}>
-            {reservation.status === 'confirmée' ? <CheckCircle size={14} /> :
-             reservation.status === 'annulée' ? <XCircle size={14} /> : <Clock size={14} />}
-            {reservation.status}
+            {reservation.statut === 'confirmée' ? <CheckCircle size={14} /> :
+             reservation.statut === 'annulée' ? <XCircle size={14} /> : <Clock size={14} />}
+            {reservation.statut}
           </div>
           <span className={styles.reservationNumber}>Numéro de réservation: #HRG-{reservation.id.toString().padStart(6, '0')}</span>
         </div>
@@ -61,11 +136,11 @@ const ReservationDetailsPage = () => {
               <h2 className={styles.sectionTitle}>Hébergement</h2>
               
               <div className={styles.logementHeader}>
-                <img src={reservation.image} alt={reservation.villaName} className={styles.logementImage} />
+                <img src="/placeholder.jpg" alt={reservation.titre} className={styles.logementImage} />
                 <div className={styles.logementInfo}>
-                  <h3 className={styles.logementName}>{reservation.villaName}</h3>
+                  <h3 className={styles.logementName}>{reservation.titre}</h3>
                   <p className={styles.logementLocation}>
-                    <MapPin size={14} /> {reservation.location}
+                    <MapPin size={14} /> {reservation.ville}, {reservation.pays}
                   </p>
                 </div>
               </div>
@@ -74,20 +149,20 @@ const ReservationDetailsPage = () => {
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}><CalendarDays size={14} /> Dates</span>
                   <div className={styles.detailValue}>
-                    <div>Arrivée: <strong>{reservation.dateArrivee}</strong></div>
-                    <div>Départ: <strong>{reservation.dateDepart}</strong></div>
-                    <div>{reservation.nuits} nuits</div>
+                    <div>Arrivée: <strong>{new Date(reservation.dateDebut).toLocaleDateString('fr-FR')}</strong></div>
+                    <div>Départ: <strong>{new Date(reservation.dateFin).toLocaleDateString('fr-FR')}</strong></div>
+                    <div>{Math.ceil((new Date(reservation.dateFin).getTime() - new Date(reservation.dateDebut).getTime()) / (1000 * 60 * 60 * 24))} nuits</div>
                   </div>
                 </div>
 
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}><Users size={14} /> Voyageurs</span>
-                  <span className={styles.detailValue}>2 adultes, 1 enfant</span>
+                  <span className={styles.detailValue}>{reservation.nombrePersonnes} personne{reservation.nombrePersonnes > 1 ? 's' : ''}</span>
                 </div>
 
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}><FileText size={14} /> Type de chambre</span>
-                  <span className={styles.detailValue}>Chambre double deluxe avec vue sur mer</span>
+                  <span className={styles.detailValue}>Chambre standard</span>
                 </div>
               </div>
 
@@ -131,24 +206,12 @@ const ReservationDetailsPage = () => {
               
               <div className={styles.paymentSummary}>
                 <div className={styles.paymentRow}>
-                  <span>Prix par nuit</span>
-                  <span>300 000 FCFA</span>
-                </div>
-                <div className={styles.paymentRow}>
-                  <span>× {reservation.nuits} nuits</span>
-                  <span>2 100 000 FCFA</span>
-                </div>
-                <div className={styles.paymentRow}>
-                  <span>Frais de service</span>
-                  <span>150 000 FCFA</span>
-                </div>
-                <div className={styles.paymentRow}>
-                  <span>Frais de taxe</span>
-                  <span>105 000 FCFA</span>
+                  <span>Prix total</span>
+                  <span>{reservation.prixTotal.toLocaleString('fr-FR')} FCFA</span>
                 </div>
                 <div className={styles.paymentTotal}>
                   <span>Total</span>
-                  <span>{reservation.montant}</span>
+                  <span>{reservation.prixTotal.toLocaleString('fr-FR')} FCFA</span>
                 </div>
               </div>
 
@@ -161,10 +224,10 @@ const ReservationDetailsPage = () => {
               </div>
 
               <div className={styles.actionButtons}>
-                {reservation.status === 'confirmée' && (
+                {reservation.statut === 'confirmée' && (
                   <>
-                    <button className={styles.modifyBtn}>Modifier la réservation</button>
-                    <button 
+                    <button className={styles.modifyBtn} onClick={handleModify}>Modifier la réservation</button>
+                    <button
                       className={styles.cancelBtn}
                       onClick={() => setShowCancelConfirm(true)}
                     >
@@ -173,7 +236,7 @@ const ReservationDetailsPage = () => {
                   </>
                 )}
                 
-                {reservation.status === 'en attente' && (
+                {reservation.statut === 'en attente' && (
                   <button className={styles.confirmBtn}>Confirmer la réservation</button>
                 )}
               </div>

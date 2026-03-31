@@ -1,4 +1,4 @@
-const { prisma } = require('../config/db');
+const { pool } = require('../config/db');
 const passwordHelper = require('../helpers/password.helper');
 const reservationService = require('../services/reservation.service');
 const reviewService = require('../services/review.service');
@@ -19,31 +19,19 @@ const updateUser = async (req, res) => {
   try {
     const { firstName, lastName, phone, avatar } = req.body;
 
-    const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        firstName,
-        lastName,
-        phone,
-        avatar,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        status: true,
-        phone: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    await pool.execute(
+      'UPDATE User SET firstName = ?, lastName = ?, phone = ?, avatar = ? WHERE id = ?',
+      [firstName, lastName, phone, avatar, req.user.id]
+    );
+
+    const [users] = await pool.execute(
+      'SELECT id, firstName, lastName, email, role, status, phone, avatar, createdAt, updatedAt FROM User WHERE id = ?',
+      [req.user.id]
+    );
 
     res.status(200).json({
       message: 'Profil mis à jour',
-      user: updatedUser,
+      user: users[0],
     });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du profil:', error);
@@ -57,7 +45,8 @@ const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     // Vérifier le mot de passe actuel
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const [users] = await pool.execute('SELECT * FROM User WHERE id = ?', [req.user.id]);
+    const user = users[0];
     const isCurrentPasswordValid = await passwordHelper.comparePassword(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       throw new Error('Mot de passe actuel incorrect');
@@ -71,10 +60,10 @@ const updatePassword = async (req, res) => {
     // Hacher le nouveau mot de passe
     const hashedPassword = await passwordHelper.hashPassword(newPassword);
 
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: { password: hashedPassword },
-    });
+    await pool.execute(
+      'UPDATE User SET password = ? WHERE id = ?',
+      [hashedPassword, req.user.id]
+    );
 
     res.status(200).json({ message: 'Mot de passe mis à jour' });
   } catch (error) {
@@ -97,20 +86,14 @@ const getMyReservations = async (req, res) => {
 // Récupérer les avis de l'utilisateur connecté
 const getMyReviews = async (req, res) => {
   try {
-    const reviews = await prisma.review.findMany({
-      where: { idVoyageur: req.user.id },
-      include: {
-        logement: {
-          select: {
-            id: true,
-            titre: true,
-            ville: true,
-            pays: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [reviews] = await pool.execute(
+      `SELECT r.*, l.id as logementId, l.titre, l.ville, l.pays
+       FROM Review r
+       LEFT JOIN Logement l ON r.logementId = l.id
+       WHERE r.idVoyageur = ?
+       ORDER BY r.createdAt DESC`,
+      [req.user.id]
+    );
 
     res.status(200).json({ reviews });
   } catch (error) {
@@ -122,10 +105,10 @@ const getMyReviews = async (req, res) => {
 // Récupérer les notifications de l'utilisateur connecté
 const getMyNotifications = async (req, res) => {
   try {
-    const notifications = await prisma.notification.findMany({
-      where: { idUser: req.user.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [notifications] = await pool.execute(
+      'SELECT * FROM Notification WHERE idUser = ? ORDER BY createdAt DESC',
+      [req.user.id]
+    );
 
     res.status(200).json({ notifications });
   } catch (error) {

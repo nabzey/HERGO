@@ -28,15 +28,35 @@ app.use(globalLimiter);
 // Rate limiting pour l'authentification
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentatives de connexion
-  message: { message: 'Trop de tentatives de connexion, réessayez plus tard' },
+  max: env.NODE_ENV === 'development' ? 50 : 10, // 50 tentatives en développement, 10 en production
+  message: {
+    message: 'Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.',
+    retryAfter: 15 * 60 // 15 minutes en secondes
+  },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Utiliser l'email si disponible, sinon l'IP
+    return (req.body && req.body.email) ? req.body.email : req.ip;
+  },
 });
 
 // Middleware globaux
+const allowedOrigins = env.CORS_ORIGIN
+  ? env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Autoriser les requêtes sans origine (comme les applications mobiles ou curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -53,9 +73,12 @@ const reviewRoutes = require('../routes/review.routes');
 const notificationRoutes = require('../routes/notification.routes');
 const calendarRoutes = require('../routes/calendar.routes');
 const settingsRoutes = require('../routes/settings.routes');
+const reclamationRoutes = require('../routes/reclamation.routes');
 
 // Routes API
-app.use('/api/auth', authLimiter, authRoutes);
+// Appliquer le rate limiter uniquement à la route de login
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth', authRoutes);
 app.use('/api-docs', swaggerSetup.serve, swaggerSetup.setup);
 app.use('/api/logements', logementRoutes);
 app.use('/api/reservations', reservationRoutes);
@@ -65,6 +88,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/reclamations', reclamationRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {

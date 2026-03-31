@@ -3,21 +3,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { usersApi, reservationsApi } from '../../core/api/api';
+import { reservationsApi } from '../../core/api/api';
 import styles from './MesReservationsPage.module.css';
 
 interface Reservation {
   id: number;
-  villaName: string;
-  location: string;
-  image: string;
-  dateArrivee: string;
-  dateDepart: string;
-  nuits: number;
-  montant: string;
-  status: string;
-  avatar?: string;
-  voyageur?: string;
+  idVoyageur: number;
+  idLogement: number;
+  dateDebut: string;
+  dateFin: string;
+  nombrePersonnes: number;
+  prixTotal: number;
+  statut: string;
+  createdAt: string;
+  updatedAt: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  titre: string;
+  ville: string;
+  pays: string;
 }
 
 type FilterType = 'toutes' | 'confirmée' | 'en attente' | 'annulée';
@@ -38,8 +44,8 @@ const MesReservationsPage = () => {
   useEffect(() => {
     const fetchReservations = async () => {
       try {
-        const data = await usersApi.getMyReservations() as Reservation[];
-        setReservations(data);
+        const response = await reservationsApi.getAll() as unknown as { reservations: Reservation[] };
+        setReservations(response.reservations || []);
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des réservations');
@@ -51,13 +57,13 @@ const MesReservationsPage = () => {
   }, []);
 
   const filtered: Reservation[] =
-    filter === 'toutes' ? reservations : reservations.filter((r) => r.status === filter);
+    filter === 'toutes' ? reservations : reservations.filter((r) => r.statut === filter);
 
   const handleCancel = async (id: number) => {
     try {
       await reservationsApi.cancel(id);
       setReservations(reservations.map(r =>
-        r.id === id ? { ...r, status: 'annulée' } : r
+        r.id === id ? { ...r, statut: 'annulée' } : r
       ));
     } catch (err: unknown) {
       const error = err as Error;
@@ -112,9 +118,15 @@ const MesReservationsPage = () => {
         <div className={styles.list}>
           {filtered.length === 0 && <p className={styles.empty}>Aucune réservation trouvée.</p>}
           {filtered.map((r) => {
-            const status = STATUS_CONFIG[r.status];
+            const status = STATUS_CONFIG[r.statut];
             const badgeCls =
               status.cls === 'green' ? styles.badgeGreen : status.cls === 'yellow' ? styles.badgeYellow : styles.badgeRed;
+            
+            // Calculer le nombre de nuits
+            const dateDebut = new Date(r.dateDebut);
+            const dateFin = new Date(r.dateFin);
+            const nuits = Math.ceil((dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24));
+            
             return (
               <div
                 key={r.id}
@@ -123,25 +135,25 @@ const MesReservationsPage = () => {
                 style={{ cursor: 'pointer' }}
               >
                 <div className={styles.cardImg}>
-                  <img src={r.image} alt={r.villaName} className={styles.img} />
+                  <img src="/placeholder.jpg" alt={r.titre} className={styles.img} />
                 </div>
                 <div className={styles.cardBody}>
                   <div className={styles.cardTop}>
-                    <h3 className={styles.villaName}>{r.villaName}</h3>
+                    <h3 className={styles.villaName}>{r.titre}</h3>
                     <span className={`${styles.badge} ${badgeCls}`}>{status.icon}{status.label}</span>
                   </div>
-                  <p className={styles.location}><MapPin size={13} /> {r.location}</p>
+                  <p className={styles.location}><MapPin size={13} /> {r.ville}, {r.pays}</p>
                   <div className={styles.dates}>
-                    <div className={styles.dateChip}><CalendarDays size={13} /><span>Arrivée : <strong>{r.dateArrivee}</strong></span></div>
+                    <div className={styles.dateChip}><CalendarDays size={13} /><span>Arrivée : <strong>{new Date(r.dateDebut).toLocaleDateString('fr-FR')}</strong></span></div>
                     <span className={styles.dateSep}>→</span>
-                    <div className={styles.dateChip}><CalendarDays size={13} /><span>Départ : <strong>{r.dateDepart}</strong></span></div>
-                    <div className={styles.nightsChip}>{r.nuits} nuits</div>
+                    <div className={styles.dateChip}><CalendarDays size={13} /><span>Départ : <strong>{new Date(r.dateFin).toLocaleDateString('fr-FR')}</strong></span></div>
+                    <div className={styles.nightsChip}>{nuits} nuits</div>
                   </div>
                 </div>
                 <div className={styles.cardRight}>
-                  <span className={styles.montant}>{r.montant}</span>
+                  <span className={styles.montant}>{r.prixTotal.toLocaleString('fr-FR')} FCFA</span>
                   <span className={styles.montantLbl}>Total payé</span>
-                  {r.status === 'en attente' && (
+                  {r.statut === 'en attente' && (
                     <button
                       className={styles.cancelBtn}
                       onClick={(e) => { e.stopPropagation(); handleCancel(r.id); }}
@@ -149,7 +161,7 @@ const MesReservationsPage = () => {
                       Annuler
                     </button>
                   )}
-                  {r.status === 'confirmée' && (
+                  {r.statut === 'confirmée' && (
                     <button
                       className={styles.reviewBtn}
                       onClick={(e) => { e.stopPropagation(); navigate(`/avis/${r.id}`); }}

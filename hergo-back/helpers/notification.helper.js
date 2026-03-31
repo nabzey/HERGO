@@ -1,19 +1,16 @@
-const { prisma } = require('../config/db');
+const { pool } = require('../config/db');
 
 const notificationHelper = {
   // Créer une notification pour un utilisateur
   createNotification: async (userId, message, type = 'SYSTEM') => {
     try {
-      const notification = await prisma.notification.create({
-        data: {
-          idUser: userId,
-          message,
-          type,
-          lu: false,
-        },
-      });
+      const [result] = await pool.execute(
+        'INSERT INTO Notification (idUser, message, type, lu) VALUES (?, ?, ?, ?)',
+        [userId, message, type, false]
+      );
 
-      return notification;
+      const [notifications] = await pool.execute('SELECT * FROM Notification WHERE id = ?', [result.insertId]);
+      return notifications[0];
     } catch (error) {
       console.error('Erreur lors de la création de la notification:', error);
       return null;

@@ -1,17 +1,40 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   User, Mail, Phone, Users, CalendarDays, MapPin, Star,
   Utensils, Car, Plane, Lock, Shield,
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { villaDetails } from '../../data/adminMockData';
+import { logementsApi, reservationsApi } from '../../core/api/api';
 import styles from './ReservationPage.module.css';
+
+interface Logement {
+  id: number;
+  titre: string;
+  type: string;
+  ville: string;
+  pays: string;
+  adresse: string;
+  description: string;
+  prixJour: number;
+  chambres: number;
+  capacite: number;
+  equipements: string[];
+  images: string[];
+  note: number;
+  idProprietaire: number;
+  statut: string;
+}
 
 const ReservationPage = () => {
   const navigate = useNavigate();
-  const villa = villaDetails;
+  const { id } = useParams();
+  const location = useLocation();
+  const [logement, setLogement] = useState<Logement | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     nom: '',
@@ -30,16 +53,38 @@ const ReservationPage = () => {
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wave' | 'orange'>(
     'card'
   );
-  // Dates simulées (en vrai elles viendraient du contexte/state de la page précédente)
-  const dateArrivee = '15 Mar 2026';
-  const dateDepart = '22 Mar 2026';
-  const nuits = 7;
+
+  // Récupérer les dates depuis le state de la page précédente ou utiliser des dates par défaut
+  const state = location.state as { dateArrivee?: string; dateDepart?: string; reservation?: any } | null;
+  const dateArrivee = state?.dateArrivee || new Date().toISOString().split('T')[0];
+  const dateDepart = state?.dateDepart || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
+  // Calculer le nombre de nuits
+  const dateDebut = new Date(dateArrivee);
+  const dateFin = new Date(dateDepart);
+  const nuits = Math.ceil((dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24));
 
   const PRIX_PETIT_DEJ = 15000; // par nuit
   const PRIX_PARKING = 25000;   // par nuit
   const PRIX_TRANSFERT = 50000; // fixe
 
-  const prixBase = villa.pricePerNight * nuits;
+  useEffect(() => {
+    const fetchLogement = async () => {
+      try {
+        if (!id) return;
+        const response = await logementsApi.getById(id) as unknown as { logement: Logement };
+        setLogement(response.logement);
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || 'Erreur lors du chargement du logement');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogement();
+  }, [id]);
+
+  const prixBase = logement ? logement.prixJour * nuits : 0;
   const prixPetitDej = options.petitDej ? PRIX_PETIT_DEJ * nuits : 0;
   const prixParking = options.parking ? PRIX_PARKING * nuits : 0;
   const prixTransfert = options.transfert ? PRIX_TRANSFERT : 0;
@@ -55,12 +100,56 @@ const ReservationPage = () => {
       [field]: Math.max(field === 'adultes' ? 1 : 0, prev[field] + delta),
     }));
 
-  const handleReserve = (e: React.FormEvent) => {
+  const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/reservation/confirmation');
+    if (!logement) return;
+    
+    setSubmitting(true);
+    setError('');
+    
+    try {
+      const nombrePersonnes = form.adultes + form.enfants;
+      const response = await reservationsApi.create({
+        idLogement: logement.id,
+        dateDebut: dateArrivee,
+        dateFin: dateDepart,
+        nombrePersonnes,
+      }) as unknown as { reservation: { id: number } };
+      
+      navigate(`/mes-reservations/${response.reservation.id}`);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Erreur lors de la création de la réservation');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const fmt = (n: number) => n.toLocaleString('fr-FR');
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p>Chargement du logement...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !logement) {
+    return (
+      <div className={styles.page}>
+        <Navbar />
+        <div className={styles.inner}>
+          <p style={{ color: 'red' }}>{error || 'Logement non trouvé'}</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -73,7 +162,7 @@ const ReservationPage = () => {
           <span className={styles.breadSep}>/</span>
           <Link to="/logements" className={styles.breadLink}>Logements</Link>
           <span className={styles.breadSep}>/</span>
-          <Link to="/logements/1" className={styles.breadLink}>{villa.name}</Link>
+          <Link to={`/logements/${logement.id}`} className={styles.breadLink}>{logement.titre}</Link>
           <span className={styles.breadSep}>/</span>
           <span className={styles.breadCurrent}>Réservation</span>
         </div>
@@ -420,20 +509,20 @@ const ReservationPage = () => {
             <div className={styles.summaryCol}>
               <div className={styles.summaryCard}>
                 <img
-                  src={villa.images[0]}
-                  alt={villa.name}
+                  src={logement.images && logement.images.length > 0 ? logement.images[0] : '/placeholder.jpg'}
+                  alt={logement.titre}
                   className={styles.summaryImg}
                 />
 
                 <div className={styles.summaryBody}>
-                  <h3 className={styles.summaryVillaName}>{villa.name}</h3>
+                  <h3 className={styles.summaryVillaName}>{logement.titre}</h3>
                   <div className={styles.summaryMeta}>
                     <span className={styles.summaryRating}>
-                      <Star size={12} fill="currentColor" /> {villa.rating}
+                      <Star size={12} fill="currentColor" /> {logement.note || 0}
                     </span>
                     <span>·</span>
                     <MapPin size={12} />
-                    {villa.location}
+                    {logement.ville}, {logement.pays}
                   </div>
 
                   {/* Dates */}
@@ -460,7 +549,7 @@ const ReservationPage = () => {
 
                   {/* Tarif détaillé */}
                   <div className={styles.priceRow}>
-                    <span>{fmt(villa.pricePerNight)} FCFA × {nuits} nuits</span>
+                    <span>{fmt(logement.prixJour)} FCFA × {nuits} nuits</span>
                     <span>{fmt(prixBase)} FCFA</span>
                   </div>
 

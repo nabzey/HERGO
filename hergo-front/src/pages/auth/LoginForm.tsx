@@ -24,12 +24,7 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     setError('');
 
     try {
-      const response = await authApi.login({ email, password });
-      const user = response.user as { role: string };
-      
-      // Sauvegarder l'utilisateur et le token
-      localStorage.setItem('hergoUser', JSON.stringify(response.user));
-      localStorage.setItem('hergoToken', response.token);
+      const user = await login(email, password);
       
       // Rediriger vers la page correspondant au rôle de l'utilisateur
       if (user.role === 'Voyageur') {

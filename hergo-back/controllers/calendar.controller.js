@@ -1,4 +1,4 @@
-const { prisma } = require('../config/prisma');
+const { pool } = require('../config/prisma');
 
 const getCalendarEvents = async (req, res) => {
   try {
@@ -8,18 +8,10 @@ const getCalendarEvents = async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
-    const events = await prisma.calendarEvent.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: {
-        date: 'asc',
-      },
-    });
+    const [events] = await pool.execute(
+      'SELECT * FROM CalendarEvent WHERE userId = ? AND date >= ? AND date <= ? ORDER BY date ASC',
+      [userId, startDate, endDate]
+    );
 
     res.json(events);
   } catch (error) {
@@ -33,18 +25,13 @@ const createCalendarEvent = async (req, res) => {
     const userId = req.user.id;
     const { title, description, date, type, logementId } = req.body;
 
-    const event = await prisma.calendarEvent.create({
-      data: {
-        title,
-        description,
-        date: new Date(date),
-        type,
-        logementId: logementId ? parseInt(logementId) : null,
-        userId,
-      },
-    });
+    const [result] = await pool.execute(
+      'INSERT INTO CalendarEvent (title, description, date, type, logementId, userId) VALUES (?, ?, ?, ?, ?, ?)',
+      [title, description, new Date(date), type, logementId ? parseInt(logementId) : null, userId]
+    );
 
-    res.status(201).json(event);
+    const [events] = await pool.execute('SELECT * FROM CalendarEvent WHERE id = ?', [result.insertId]);
+    res.status(201).json(events[0]);
   } catch (error) {
     console.error('Erreur lors de la création de l\'événement:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -57,29 +44,22 @@ const updateCalendarEvent = async (req, res) => {
     const userId = req.user.id;
     const { title, description, date, type, logementId } = req.body;
 
-    const existingEvent = await prisma.calendarEvent.findFirst({
-      where: {
-        id: parseInt(id),
-        userId,
-      },
-    });
+    const [existingEvents] = await pool.execute(
+      'SELECT * FROM CalendarEvent WHERE id = ? AND userId = ?',
+      [parseInt(id), userId]
+    );
 
-    if (!existingEvent) {
+    if (existingEvents.length === 0) {
       return res.status(404).json({ message: 'Événement non trouvé' });
     }
 
-    const event = await prisma.calendarEvent.update({
-      where: { id: parseInt(id) },
-      data: {
-        title,
-        description,
-        date: new Date(date),
-        type,
-        logementId: logementId ? parseInt(logementId) : null,
-      },
-    });
+    await pool.execute(
+      'UPDATE CalendarEvent SET title = ?, description = ?, date = ?, type = ?, logementId = ? WHERE id = ?',
+      [title, description, new Date(date), type, logementId ? parseInt(logementId) : null, parseInt(id)]
+    );
 
-    res.json(event);
+    const [events] = await pool.execute('SELECT * FROM CalendarEvent WHERE id = ?', [parseInt(id)]);
+    res.json(events[0]);
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'événement:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -91,20 +71,16 @@ const deleteCalendarEvent = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const existingEvent = await prisma.calendarEvent.findFirst({
-      where: {
-        id: parseInt(id),
-        userId,
-      },
-    });
+    const [existingEvents] = await pool.execute(
+      'SELECT * FROM CalendarEvent WHERE id = ? AND userId = ?',
+      [parseInt(id), userId]
+    );
 
-    if (!existingEvent) {
+    if (existingEvents.length === 0) {
       return res.status(404).json({ message: 'Événement non trouvé' });
     }
 
-    await prisma.calendarEvent.delete({
-      where: { id: parseInt(id) },
-    });
+    await pool.execute('DELETE FROM CalendarEvent WHERE id = ?', [parseInt(id)]);
 
     res.json({ message: 'Événement supprimé' });
   } catch (error) {
