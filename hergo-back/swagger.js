@@ -3,12 +3,16 @@ const swaggerUi = require('swagger-ui-express');
 const env = require('./config/env');
 
 const localNetworkUrl = (env.LOCAL_NETWORK_URL || '').trim();
-const swaggerServers = [
-  {
-    url: `http://localhost:https://hergo-1.onrender.com`,
+const renderUrl = (env.RENDER_URL || '').trim();
+
+const swaggerServers = [];
+
+if (env.NODE_ENV !== 'production') {
+  swaggerServers.push({
+    url: `http://localhost:${env.PORT}`,
     description: 'Local development server',
-  },
-];
+  });
+}
 
 if (localNetworkUrl) {
   swaggerServers.push({
@@ -17,7 +21,6 @@ if (localNetworkUrl) {
   });
 }
 
-const renderUrl = (process.env.RENDER_URL || '').trim();
 if (renderUrl) {
   swaggerServers.push({
     url: renderUrl.replace(/\/$/, ''),
@@ -31,7 +34,7 @@ const options = {
     info: {
       title: 'Hergo API Documentation',
       version: '1.0.0',
-      description: 'API documentation for Hergo accommodation booking platform',
+      description: 'API documentation for Hergo',
     },
     components: {
       securitySchemes: {
