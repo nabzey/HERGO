@@ -47,6 +47,37 @@ docker compose up --build
 
 Le conteneur `app` applique automatiquement `prisma migrate deploy` au démarrage puis lance l'API.
 
+### 3.1) Deploiement sur Render
+
+Le depot contient un fichier [`render.yaml`](../render.yaml) a la racine pour deployer le backend avec Docker et une base PostgreSQL Render.
+
+Variables a renseigner dans Render :
+
+- `CORS_ORIGIN`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `BREVO_API_KEY`
+- `BREVO_SENDER_EMAIL`
+
+Variables deja prevues dans `render.yaml` :
+
+- `DATABASE_URL` : injectee depuis la base Render
+- `JWT_SECRET` : genere automatiquement
+- `NODE_ENV=production`
+- `PORT=5000`
+- `BREVO_SENDER_NAME=Hergo`
+- `BREVO_SMS_SENDER=Hergo`
+- `CLOUDINARY_FOLDER=hergo`
+
+Pour deployer :
+
+1. pousser le depot sur GitHub ;
+2. dans Render, choisir `Blueprint` ;
+3. selectionner le repo ;
+4. verifier les variables synchronisees ;
+5. lancer le deploiement.
+
 ### 4) Notifications email et SMS avec Brevo
 
 Variables d'environnement à renseigner :

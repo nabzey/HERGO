@@ -1,0 +1,7 @@
+.git
+node_modules
+hergo-front/node_modules
+hergo-back/node_modules
+hergo-back/.env
+hergo-back/coverage
+npm-debug.log

@@ -1,0 +1,45 @@
+databases:
+  - name: hergo-postgres
+    databaseName: hebergo
+    user: zeynab
+    plan: free
+
+services:
+  - type: web
+    name: hergo-back
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: CLOUDINARY_FOLDER
+        value: hergo
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hergo-postgres
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: Hergo
+      - key: BREVO_SMS_SENDER
+        value: Hergo
