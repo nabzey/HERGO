@@ -2,24 +2,20 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const env = require('./config/env');
 
-const publicBaseUrl = (env.PUBLIC_BASE_URL || '').trim();
-const swaggerServers = publicBaseUrl
-  ? [
-      {
-        url: publicBaseUrl.replace(/\/$/, ''),
-        description: 'Public server',
-      },
-      {
-        url: `http://localhost:${env.PORT}`,
-        description: 'Local development server',
-      },
-    ]
-  : [
-      {
-        url: `http://localhost:${env.PORT}`,
-        description: 'Local development server',
-      },
-    ];
+const localNetworkUrl = (env.LOCAL_NETWORK_URL || '').trim();
+const swaggerServers = [
+  {
+    url: `http://localhost:${env.PORT}`,
+    description: 'Local development server',
+  },
+];
+
+if (localNetworkUrl) {
+  swaggerServers.push({
+    url: localNetworkUrl.replace(/\/$/, ''),
+    description: 'Local network server',
+  });
+}
 
 const options = {
   definition: {
@@ -27,15 +23,7 @@ const options = {
     info: {
       title: 'Hergo API Documentation',
       version: '1.0.0',
-      description: [
-        'API documentation for Hergo accommodation booking platform.',
-        '',
-        'Testing notes:',
-        '- Use the server selector at the top of Swagger UI.',
-        '- For local testing, use the localhost server.',
-        '- For remote testing from another device, configure PUBLIC_BASE_URL and use the public server.',
-        '- Example public server: https://hergo-1.onrender.com',
-      ].join('\n'),
+      description: 'API documentation for Hergo accommodation booking platform',
     },
     components: {
       securitySchemes: {
