@@ -5,7 +5,7 @@ const env = require('./config/env');
 const localNetworkUrl = (env.LOCAL_NETWORK_URL || '').trim();
 const swaggerServers = [
   {
-    url: `http://localhost:${env.PORT}`,
+    url: `http://localhost:https://hergo-1.onrender.com`,
     description: 'Local development server',
   },
 ];
