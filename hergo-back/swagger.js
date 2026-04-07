@@ -17,6 +17,14 @@ if (localNetworkUrl) {
   });
 }
 
+const renderUrl = (process.env.RENDER_URL || '').trim();
+if (renderUrl) {
+  swaggerServers.push({
+    url: renderUrl.replace(/\/$/, ''),
+    description: 'Production server',
+  });
+}
+
 const options = {
   definition: {
     openapi: '3.0.0',

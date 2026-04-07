@@ -48,10 +48,11 @@ const allowedOrigins = env.CORS_ORIGIN
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Autoriser les requêtes sans origine (comme les applications mobiles ou curl)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else if (env.NODE_ENV === 'production') {
       callback(null, true);
     } else {
       callback(new Error('Non autorisé par CORS'));
