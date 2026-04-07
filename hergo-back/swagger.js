@@ -27,7 +27,15 @@ const options = {
     info: {
       title: 'Hergo API Documentation',
       version: '1.0.0',
-      description: 'API documentation for Hergo accommodation booking platform',
+      description: [
+        'API documentation for Hergo accommodation booking platform.',
+        '',
+        'Testing notes:',
+        '- Use the server selector at the top of Swagger UI.',
+        '- For local testing, use the localhost server.',
+        '- For remote testing from another device, configure PUBLIC_BASE_URL and use the public server.',
+        '- Example public server: https://hergo-1.onrender.com',
+      ].join('\n'),
     },
     components: {
       securitySchemes: {
