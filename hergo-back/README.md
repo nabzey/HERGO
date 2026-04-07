@@ -15,23 +15,22 @@ Ce projet expose une API REST sécurisée qui gère :
 
 ### 1) Prérequis
 
-- Node.js >= 14.17
-- MySQL >= 5.7
+- Node.js >= 20
+- Docker + Docker Compose
 - npm ou yarn
 
 ### 2) Installation
 
 1. Cloner le dépôt
 2. `npm install`
-3. Créer une base de données MySQL
-4. Copier `.env.example` en `.env` et ajuster les variables (DB, JWT...)
+3. Copier `.env.example` en `.env` et ajuster les variables (DB, JWT, Cloudinary)
 5. Générer le client Prisma :
    ```bash
    npx prisma generate
    ```
 6. Appliquer les migrations (local) :
    ```bash
-   npx prisma migrate dev --name init
+   npx prisma migrate dev
    ```
 7. Lancer le serveur :
    ```bash
@@ -39,6 +38,29 @@ Ce projet expose une API REST sécurisée qui gère :
    ```
 
 > ✅ Le serveur écoute par défaut sur `http://localhost:5000` (ou la valeur de `PORT` dans `.env`).
+
+### 3) Démarrage avec Docker
+
+```bash
+docker compose up --build
+```
+
+Le conteneur `app` applique automatiquement `prisma migrate deploy` au démarrage puis lance l'API.
+
+### 4) Notifications email et SMS avec Brevo
+
+Variables d'environnement à renseigner :
+
+- `BREVO_API_KEY`
+- `BREVO_SENDER_EMAIL`
+- `BREVO_SENDER_NAME`
+- `BREVO_SMS_SENDER`
+
+Fichiers utiles :
+
+- `config/brevo.js` : client HTTP Brevo
+- `helpers/email.helper.js` : emails transactionnels
+- `helpers/sms.helper.js` : SMS transactionnels
 
 ---
 

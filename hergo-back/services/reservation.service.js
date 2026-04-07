@@ -1,6 +1,62 @@
 const { pool } = require('../config/db');
 const notificationHelper = require('../helpers/notification.helper');
 const emailHelper = require('../helpers/email.helper');
+const smsHelper = require('../helpers/sms.helper');
+
+const notifyReservationCreated = async (reservation, logement) => {
+  await emailHelper.sendReservationEmail(
+    reservation.email,
+    reservation.firstName || 'client',
+    reservation
+  );
+  await smsHelper.sendReservationSms(reservation.phone, reservation);
+
+  if (logement.idProprietaire) {
+    const [hosts] = await pool.execute(
+      'SELECT id, firstName, lastName, email, phone FROM User WHERE id = ?',
+      [logement.idProprietaire]
+    );
+    const host = hosts[0];
+
+    if (host) {
+      await notificationHelper.createReservationNotification(host.id, reservation);
+      await emailHelper.sendHostNotificationEmail(
+        host.email,
+        host.firstName || 'hote',
+        reservation
+      );
+      await smsHelper.sendReservationSms(host.phone, reservation);
+    }
+  }
+};
+
+const notifyReservationStatusChanged = async (reservation, statut) => {
+  if (statut === 'CONFIRME') {
+    await notificationHelper.createReservationConfirmationNotification(
+      reservation.idVoyageur,
+      reservation
+    );
+    await emailHelper.sendReservationEmail(
+      reservation.email,
+      reservation.firstName || 'client',
+      reservation
+    );
+    await smsHelper.sendReservationSms(reservation.phone, reservation);
+  }
+
+  if (statut === 'ANNULE') {
+    await notificationHelper.createReservationCancelationNotification(
+      reservation.idVoyageur,
+      reservation
+    );
+    await emailHelper.sendCancelationEmail(
+      reservation.email,
+      reservation.firstName || 'client',
+      reservation
+    );
+    await smsHelper.sendCancelationSms(reservation.phone, reservation);
+  }
+};
 
 const reservationService = {
   // Récupérer toutes les réservations
@@ -147,7 +203,10 @@ const reservationService = {
         WHERE r.id = ?
       `, [result.insertId]);
 
-      return newReservations[0];
+      const reservation = newReservations[0];
+      await notifyReservationCreated(reservation, logement);
+
+      return reservation;
     } catch (error) {
       throw error;
     }
@@ -193,7 +252,10 @@ const reservationService = {
         WHERE r.id = ?
       `, [id]);
 
-      return updatedReservations[0];
+      const updatedReservation = updatedReservations[0];
+      await notifyReservationStatusChanged(updatedReservation, statut);
+
+      return updatedReservation;
     } catch (error) {
       throw error;
     }
@@ -244,7 +306,10 @@ const reservationService = {
         WHERE r.id = ?
       `, [id]);
 
-      return updatedReservations[0];
+      const updatedReservation = updatedReservations[0];
+      await notifyReservationStatusChanged(updatedReservation, 'ANNULE');
+
+      return updatedReservation;
     } catch (error) {
       throw error;
     }

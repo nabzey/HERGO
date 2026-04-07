@@ -7,7 +7,8 @@ const schemas = {
     name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères').max(100),
     email: z.string().email('Email invalide'),
     password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
-    role: z.enum(['Voyageur', 'Hôte', 'Admin']).default('Voyageur'),
+    role: z.enum(['Voyageur', 'Hôte', 'Admin', 'VOYAGEUR', 'HOTE', 'ADMIN']).default('VOYAGEUR'),
+    phone: z.string().optional(),
   }),
 
   login: z.object({
@@ -32,27 +33,29 @@ const schemas = {
 
   // Logement
   createLogement: z.object({
-    name: z.string().min(3, 'Le nom doit contenir au moins 3 caractères').max(200),
-    type: z.enum(['Villa', 'Hôtel', 'Appartement']),
+    titre: z.string().min(3, 'Le titre doit contenir au moins 3 caractères').max(200),
     ville: z.string().min(1, 'La ville est requise'),
-    adresse: z.string().optional(),
+    adresse: z.string().min(1, "L'adresse est requise"),
     description: z.string().min(10, 'La description doit contenir au moins 10 caractères').max(2000),
-    prix: z.number().positive('Le prix doit être positif'),
-    chambres: z.number().int().positive().optional(),
-    capacite: z.number().int().positive().optional(),
-    equipements: z.array(z.string()).optional(),
+    prixJour: z.coerce.number().positive('Le prix doit être positif'),
+    capacite: z.coerce.number().int().positive('La capacité doit être positive'),
+    pays: z.string().min(1, 'Le pays est requis'),
+    longitude: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
+    statut: z.enum(['PUBLIE', 'BROUILLON', 'EN_ATTENTE', 'REJETE']).optional(),
   }),
 
   updateLogement: z.object({
-    name: z.string().min(3).max(200).optional(),
-    type: z.enum(['Villa', 'Hôtel', 'Appartement']).optional(),
+    titre: z.string().min(3).max(200).optional(),
     ville: z.string().min(1).optional(),
     adresse: z.string().optional(),
     description: z.string().min(10).max(2000).optional(),
-    prix: z.number().positive().optional(),
-    chambres: z.number().int().positive().optional(),
-    capacite: z.number().int().positive().optional(),
-    equipements: z.array(z.string()).optional(),
+    prixJour: z.coerce.number().positive().optional(),
+    capacite: z.coerce.number().int().positive().optional(),
+    pays: z.string().min(1).optional(),
+    longitude: z.coerce.number().optional(),
+    latitude: z.coerce.number().optional(),
+    statut: z.enum(['PUBLIE', 'BROUILLON', 'EN_ATTENTE', 'REJETE']).optional(),
   }),
 
   // Reservation

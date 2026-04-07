@@ -3,6 +3,7 @@ const { pool } = require('../config/db');
 const passwordHelper = require('../helpers/password.helper');
 const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const emailHelper = require('../helpers/email.helper');
+const smsHelper = require('../helpers/sms.helper');
 const { AuthenticationError, ConflictError, NotFoundError } = require('../helpers/errors');
 
 // Mock des dépendances
@@ -28,6 +29,10 @@ jest.mock('../helpers/email.helper', () => ({
   sendRegistrationEmail: jest.fn()
 }));
 
+jest.mock('../helpers/sms.helper', () => ({
+  sendRegistrationSms: jest.fn()
+}));
+
 describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -47,7 +52,7 @@ describe('AuthService', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john@example.com',
-        role: 'Voyageur',
+        role: 'VOYAGEUR',
         status: 'ACTIF',
         avatar: null,
         createdAt: new Date(),
@@ -63,6 +68,7 @@ describe('AuthService', () => {
       generateToken.mockReturnValue('mockToken');
       generateRefreshToken.mockReturnValue('mockRefreshToken');
       emailHelper.sendRegistrationEmail.mockResolvedValue(true);
+      smsHelper.sendRegistrationSms.mockResolvedValue(true);
 
       const result = await authService.register(userData);
 
@@ -72,6 +78,8 @@ describe('AuthService', () => {
       expect(generateToken).toHaveBeenCalled();
       expect(generateRefreshToken).toHaveBeenCalled();
       expect(emailHelper.sendRegistrationEmail).toHaveBeenCalledWith('john@example.com', 'John');
+      expect(smsHelper.sendRegistrationSms).toHaveBeenCalledWith(null, 'John');
+      expect(result.user.role).toBe('VOYAGEUR');
       expect(result).toHaveProperty('user');
       expect(result).toHaveProperty('token');
       expect(result).toHaveProperty('refreshToken');
@@ -198,7 +206,7 @@ describe('AuthService', () => {
       const decoded = { id: 1 };
 
       verifyRefreshToken.mockReturnValue(decoded);
-      pool.execute.mockResolvedValueOnce([[{ id: 1, email: 'john@example.com', role: 'Voyageur' }]]);
+      pool.execute.mockResolvedValueOnce([[{ id: 1, email: 'john@example.com', role: 'VOYAGEUR' }]]);
       generateToken.mockReturnValue('newToken');
       generateRefreshToken.mockReturnValue('newRefreshToken');
 

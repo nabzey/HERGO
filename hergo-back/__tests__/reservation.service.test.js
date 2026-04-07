@@ -2,6 +2,7 @@ const reservationService = require('../services/reservation.service');
 const { pool } = require('../config/db');
 const notificationHelper = require('../helpers/notification.helper');
 const emailHelper = require('../helpers/email.helper');
+const smsHelper = require('../helpers/sms.helper');
 
 // Mock de la base de données et des helpers
 jest.mock('../config/db', () => ({
@@ -11,11 +12,20 @@ jest.mock('../config/db', () => ({
 }));
 
 jest.mock('../helpers/notification.helper', () => ({
-  sendNotification: jest.fn()
+  createReservationNotification: jest.fn(),
+  createReservationConfirmationNotification: jest.fn(),
+  createReservationCancelationNotification: jest.fn()
 }));
 
 jest.mock('../helpers/email.helper', () => ({
-  sendReservationEmail: jest.fn()
+  sendReservationEmail: jest.fn(),
+  sendCancelationEmail: jest.fn(),
+  sendHostNotificationEmail: jest.fn()
+}));
+
+jest.mock('../helpers/sms.helper', () => ({
+  sendReservationSms: jest.fn(),
+  sendCancelationSms: jest.fn()
 }));
 
 describe('ReservationService', () => {
@@ -204,7 +214,8 @@ describe('ReservationService', () => {
         id: 1,
         titre: 'Appartement Paris',
         prixJour: 100,
-        statut: 'PUBLIE'
+        statut: 'PUBLIE',
+        idProprietaire: 10
       };
 
       const mockCreatedReservation = {
@@ -216,20 +227,30 @@ describe('ReservationService', () => {
         nombrePersonnes: 2,
         prixTotal: 400,
         statut: 'EN_ATTENTE',
+        email: 'voyageur@example.com',
+        phone: '+221770000000',
         firstName: 'John',
         lastName: 'Doe',
         titre: 'Appartement Paris'
+      };
+
+      const mockHost = {
+        id: 10,
+        firstName: 'Host',
+        email: 'host@example.com',
+        phone: '+221780000000'
       };
 
       pool.execute
         .mockResolvedValueOnce([[mockLogement]]) // Vérification logement
         .mockResolvedValueOnce([[]]) // Vérification disponibilité
         .mockResolvedValueOnce([{ insertId: 1 }]) // Insertion
-        .mockResolvedValueOnce([[mockCreatedReservation]]); // Récupération
+        .mockResolvedValueOnce([[mockCreatedReservation]]) // Récupération
+        .mockResolvedValueOnce([[mockHost]]); // Hôte
 
       const result = await reservationService.createReservation(reservationData, userId);
 
-      expect(pool.execute).toHaveBeenCalledTimes(4);
+      expect(pool.execute).toHaveBeenCalledTimes(5);
       expect(result).toEqual(mockCreatedReservation);
     });
 
@@ -296,7 +317,11 @@ describe('ReservationService', () => {
 
       const mockUpdatedReservation = {
         ...mockReservation,
-        statut: newStatus
+        statut: newStatus,
+        email: 'voyageur@example.com',
+        phone: '+221770000000',
+        firstName: 'John',
+        titre: 'Appartement Paris'
       };
 
       pool.execute
@@ -343,7 +368,11 @@ describe('ReservationService', () => {
 
       const mockCancelledReservation = {
         ...mockReservation,
-        statut: 'ANNULE'
+        statut: 'ANNULE',
+        email: 'voyageur@example.com',
+        phone: '+221770000000',
+        firstName: 'John',
+        titre: 'Appartement Paris'
       };
 
       pool.execute

@@ -97,12 +97,21 @@ describe('LogementService', () => {
         statut: 'PUBLIE'
       };
 
-      pool.execute.mockResolvedValueOnce([[mockLogement]]);
+      pool.execute
+        .mockResolvedValueOnce([[mockLogement]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
 
       const result = await logementService.getLogementById(1);
 
-      expect(pool.execute).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockLogement);
+      expect(pool.execute).toHaveBeenCalledTimes(4);
+      expect(result).toEqual({
+        ...mockLogement,
+        images: [],
+        equipements: [],
+        espaces: [],
+      });
     });
 
     it('devrait rejeter si le logement n\'existe pas', async () => {
@@ -138,12 +147,20 @@ describe('LogementService', () => {
 
       pool.execute
         .mockResolvedValueOnce([{ insertId: 1 }]) // Insertion
-        .mockResolvedValueOnce([[mockCreatedLogement]]); // Récupération
+        .mockResolvedValueOnce([[mockCreatedLogement]]) // Récupération logement
+        .mockResolvedValueOnce([[]]) // Images
+        .mockResolvedValueOnce([[]]) // Equipements
+        .mockResolvedValueOnce([[]]); // Espaces
 
       const result = await logementService.createLogement(logementData, userId);
 
-      expect(pool.execute).toHaveBeenCalledTimes(2);
-      expect(result).toEqual(mockCreatedLogement);
+      expect(pool.execute).toHaveBeenCalledTimes(5);
+      expect(result).toEqual({
+        ...mockCreatedLogement,
+        images: [],
+        equipements: [],
+        espaces: [],
+      });
     });
   });
 
@@ -180,12 +197,20 @@ describe('LogementService', () => {
       pool.execute
         .mockResolvedValueOnce([[existingLogement]]) // Vérification existence
         .mockResolvedValueOnce([{}]) // Mise à jour
-        .mockResolvedValueOnce([[updatedLogement]]); // Récupération
+        .mockResolvedValueOnce([[updatedLogement]]) // Récupération logement
+        .mockResolvedValueOnce([[]]) // Images
+        .mockResolvedValueOnce([[]]) // Equipements
+        .mockResolvedValueOnce([[]]); // Espaces
 
       const result = await logementService.updateLogement(logementId, updateData, userId, userRole);
 
-      expect(pool.execute).toHaveBeenCalledTimes(3);
-      expect(result).toEqual(updatedLogement);
+      expect(pool.execute).toHaveBeenCalledTimes(6);
+      expect(result).toEqual({
+        ...updatedLogement,
+        images: [],
+        equipements: [],
+        espaces: [],
+      });
     });
 
     it('devrait rejeter si l\'utilisateur n\'est pas le propriétaire', async () => {
@@ -236,11 +261,19 @@ describe('LogementService', () => {
       pool.execute
         .mockResolvedValueOnce([[existingLogement]])
         .mockResolvedValueOnce([{}])
-        .mockResolvedValueOnce([[updatedLogement]]);
+        .mockResolvedValueOnce([[updatedLogement]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
 
       const result = await logementService.updateLogement(logementId, updateData, userId, userRole);
 
-      expect(result).toEqual(updatedLogement);
+      expect(result).toEqual({
+        ...updatedLogement,
+        images: [],
+        equipements: [],
+        espaces: [],
+      });
     });
   });
 
@@ -257,11 +290,14 @@ describe('LogementService', () => {
 
       pool.execute
         .mockResolvedValueOnce([[existingLogement]])
+        .mockResolvedValueOnce([{}])
+        .mockResolvedValueOnce([{}])
+        .mockResolvedValueOnce([{}])
         .mockResolvedValueOnce([{}]);
 
       const result = await logementService.deleteLogement(logementId, userId, userRole);
 
-      expect(pool.execute).toHaveBeenCalledTimes(2);
+      expect(pool.execute).toHaveBeenCalledTimes(5);
       expect(result).toBe(true);
     });
 
@@ -293,6 +329,9 @@ describe('LogementService', () => {
 
       pool.execute
         .mockResolvedValueOnce([[existingLogement]])
+        .mockResolvedValueOnce([{}])
+        .mockResolvedValueOnce([{}])
+        .mockResolvedValueOnce([{}])
         .mockResolvedValueOnce([{}]);
 
       const result = await logementService.deleteLogement(logementId, userId, userRole);

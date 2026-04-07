@@ -61,6 +61,29 @@ const deleteLogement = async (req, res) => {
   }
 };
 
+const uploadLogementImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Aucune image fournie' });
+    }
+
+    const image = await logementService.uploadLogementImage(
+      req.params.id,
+      req.file,
+      req.user.id,
+      req.user.role
+    );
+
+    res.status(201).json({
+      message: 'Image uploadée',
+      image,
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'upload de l'image:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Gérer les images d'un logement
 const manageImages = async (req, res) => {
   try {
@@ -109,6 +132,7 @@ module.exports = {
   createLogement,
   updateLogement,
   deleteLogement,
+  uploadLogementImage,
   manageImages,
   manageEquipements,
   manageEspaces,

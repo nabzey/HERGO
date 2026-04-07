@@ -30,7 +30,8 @@ describe('API Tests', () => {
         name: 'John Doe',
         email: 'john@example.com',
         password: 'Password123!',
-        role: 'Voyageur'
+        role: 'VOYAGEUR',
+        phone: '+221770000000'
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -44,7 +45,8 @@ describe('API Tests', () => {
             name: 'John Doe',
             email: 'john@example.com',
             password: 'Password123!',
-            role: 'Voyageur'
+            role: 'VOYAGEUR',
+            phone: '+221770000000'
           })
         })
       );

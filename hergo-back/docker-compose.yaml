@@ -1,0 +1,51 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hergo_back_app
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://zeynab:nouveaumotdepasse@postgres:5432/hebergo?schema=public
+      JWT_SECRET: your_jwt_secret_key_here
+      JWT_EXPIRES_IN: 24h
+      CORS_ORIGIN: http://localhost:5173,http://localhost:3000
+      PORT: 5000
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      CLOUDINARY_FOLDER: hergo
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME}
+      BREVO_SMS_SENDER: ${BREVO_SMS_SENDER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: hergo_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hebergo
+      POSTGRES_USER: zeynab
+      POSTGRES_PASSWORD: nouveaumotdepasse
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zeynab -d hebergo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pg_data:

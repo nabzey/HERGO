@@ -54,7 +54,7 @@ const apiRequest = async <T>(endpoint: string, options: RequestOptions = {}): Pr
 
 // Auth API
 export const authApi = {
-  register: (data: { name: string; email: string; password: string; role: string }) =>
+  register: (data: { name: string; email: string; password: string; role: string; phone?: string }) =>
     apiRequest<{ user: unknown; token: string }>('/auth/register', { method: 'POST', body: data }),
   
   login: (data: { email: string; password: string }) =>

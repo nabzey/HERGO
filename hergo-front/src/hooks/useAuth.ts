@@ -16,6 +16,23 @@ export interface AuthUser {
   updatedAt: string;
 }
 
+type ApiRole = 'VOYAGEUR' | 'HOTE' | 'ADMIN' | 'Voyageur' | 'Hôte' | 'Admin';
+
+const mapApiRoleToUiRole = (role: ApiRole): UserRole => {
+  if (role === 'VOYAGEUR' || role === 'Voyageur') {
+    return 'Voyageur';
+  }
+  if (role === 'HOTE' || role === 'Hôte') {
+    return 'Hôte';
+  }
+  return 'Admin';
+};
+
+const normalizeUser = (user: AuthUser & { role: ApiRole }): AuthUser => ({
+  ...user,
+  role: mapApiRoleToUiRole(user.role),
+});
+
 export const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +45,7 @@ export const useAuth = () => {
     if (savedUser && token) {
       try {
         const userData = JSON.parse(savedUser);
-        setUser(userData);
+        setUser(normalizeUser(userData));
       } catch (error) {
         console.error('Erreur lors de la récupération de l\'utilisateur:', error);
         localStorage.removeItem('hergoUser');
@@ -41,7 +58,7 @@ export const useAuth = () => {
   const login = async (email: string, password: string): Promise<AuthUser> => {
     try {
       const response = await authApi.login({ email, password });
-      const userData = response.user as AuthUser;
+      const userData = normalizeUser(response.user as AuthUser & { role: ApiRole });
       
       // Sauvegarder l'utilisateur et le token
       localStorage.setItem('hergoUser', JSON.stringify(userData));
@@ -54,10 +71,10 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (data: { name: string; email: string; password: string; role: string }): Promise<AuthUser> => {
+  const register = async (data: { name: string; email: string; password: string; role: string; phone?: string }): Promise<AuthUser> => {
     try {
       const response = await authApi.register(data);
-      const userData = response.user as AuthUser;
+      const userData = normalizeUser(response.user as AuthUser & { role: ApiRole });
       
       // Sauvegarder l'utilisateur et le token
       localStorage.setItem('hergoUser', JSON.stringify(userData));

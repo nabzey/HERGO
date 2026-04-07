@@ -2,15 +2,30 @@ const { pool } = require('../config/db');
 const passwordHelper = require('../helpers/password.helper');
 const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const emailHelper = require('../helpers/email.helper');
+const smsHelper = require('../helpers/sms.helper');
 const { AuthenticationError, ConflictError, NotFoundError } = require('../helpers/errors');
+
+const normalizeRole = (role = 'VOYAGEUR') => {
+  const roleMap = {
+    Voyageur: 'VOYAGEUR',
+    Hôte: 'HOTE',
+    Admin: 'ADMIN',
+    VOYAGEUR: 'VOYAGEUR',
+    HOTE: 'HOTE',
+    ADMIN: 'ADMIN',
+  };
+
+  return roleMap[role] || 'VOYAGEUR';
+};
 
 const authService = {
   // Inscription
   register: async (data) => {
     try {
-      const { name, email, password, role = 'Voyageur' } = data;
+      const { name, email, password, role = 'VOYAGEUR', phone = null } = data;
       const [firstName, ...lastNameParts] = name.split(' ');
       const lastName = lastNameParts.join(' ') || '';
+      const normalizedRole = normalizeRole(role);
 
       // Vérifier si l'utilisateur existe déjà
       const [existingUsers] = await pool.execute('SELECT * FROM User WHERE email = ?', [email]);
@@ -28,8 +43,8 @@ const authService = {
 
       // Créer l'utilisateur
       const [result] = await pool.execute(
-        'INSERT INTO User (firstName, lastName, email, password, role, updatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-        [firstName, lastName, email, hashedPassword, role]
+        'INSERT INTO User (firstName, lastName, email, password, role, phone, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+        [firstName, lastName, email, hashedPassword, normalizedRole, phone]
       );
 
       const user = {
@@ -37,8 +52,9 @@ const authService = {
         firstName,
         lastName,
         email,
-        role,
+        role: normalizedRole,
         status: 'ACTIF',
+        phone,
         avatar: null,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -46,6 +62,7 @@ const authService = {
 
       // Envoyer email de confirmation
       await emailHelper.sendRegistrationEmail(email, firstName);
+      await smsHelper.sendRegistrationSms(phone, firstName);
 
       // Générer les tokens JWT
       const token = generateToken({ id: user.id, email: user.email, role: user.role });

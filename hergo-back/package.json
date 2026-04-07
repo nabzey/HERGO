@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "nodemon core/server.js",
     "start": "node core/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -24,14 +27,17 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "mysql2": "^2.3.3",
+    "pg": "^8.13.1",
     "pdfmake": "^0.2.20",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "zod": "^3.20.0"
+    "zod": "^3.20.0",
+    "@prisma/client": "^6.7.0",
+    "cloudinary": "^2.5.1"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",
+    "prisma": "^6.7.0",
     "jest": "^27.5.1",
     "nodemon": "^2.0.22",
     "supertest": "^6.3.3"

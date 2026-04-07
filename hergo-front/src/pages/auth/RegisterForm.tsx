@@ -42,18 +42,19 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
     setError('');
 
     try {
-      const userRole = role === 'client' ? 'Voyageur' : 'Hôte';
+      const userRole = role === 'client' ? 'VOYAGEUR' : 'HOTE';
       const user = await register({
         name: `${prenom} ${nom}`,
         email,
         password,
         role: userRole,
+        phone: telephone.trim() || undefined,
       });
       
       // Rediriger vers la page correspondant au rôle
-      if (userRole === 'Voyageur') {
+      if (userRole === 'VOYAGEUR') {
         navigate('/profil');
-      } else if (userRole === 'Hôte') {
+      } else if (userRole === 'HOTE') {
         navigate('/hote/dashboard');
       }
     } catch (err: unknown) {

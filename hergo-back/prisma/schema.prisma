@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   // url is configured through prisma.config.ts / prisma.config.js for Prisma 7
 }
 

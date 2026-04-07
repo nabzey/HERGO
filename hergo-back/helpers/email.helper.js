@@ -1,54 +1,98 @@
-// Ce fichier contient les fonctions pour envoyer des emails
-// Dans un projet réel, vous pouvez utiliser Nodemailer avec un service comme Gmail, SendGrid, ou Mailgun
+const { sendTransactionalEmail } = require('../config/brevo');
+
+const sendEmailSafely = async (payload) => {
+  try {
+    if (!process.env.BREVO_API_KEY || !process.env.BREVO_SENDER_EMAIL) {
+      console.warn('Brevo email non configuré, envoi ignoré');
+      return false;
+    }
+
+    await sendTransactionalEmail(payload);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'email via Brevo:", error.message);
+    return false;
+  }
+};
 
 const emailHelper = {
-  // Envoi d'un email de confirmation d'inscription
-  sendRegistrationEmail: async (email, firstName) => {
-    try {
-      console.log(`Email de confirmation envoyé à ${email} pour ${firstName}`);
-      // Implémentation avec Nodemailer
-      return true;
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'email:', error);
-      return false;
-    }
-  },
+  sendRegistrationEmail: async (email, firstName) =>
+    sendEmailSafely({
+      to: {
+        email,
+        name: firstName,
+      },
+      subject: 'Bienvenue sur Hergo',
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Bienvenue ${firstName},</h2>
+            <p>Votre compte Hergo a bien ete cree.</p>
+            <p>Vous pouvez maintenant vous connecter et utiliser la plateforme.</p>
+          </body>
+        </html>
+      `,
+      textContent: `Bienvenue ${firstName}, votre compte Hergo a bien ete cree.`,
+      tags: ['registration'],
+    }),
 
-  // Envoi d'un email de confirmation de réservation
-  sendReservationEmail: async (email, firstName, reservationDetails) => {
-    try {
-      console.log(`Email de confirmation de réservation envoyé à ${email} pour ${firstName}`);
-      console.log('Détails de la réservation:', reservationDetails);
-      return true;
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'email:', error);
-      return false;
-    }
-  },
+  sendReservationEmail: async (email, firstName, reservationDetails) =>
+    sendEmailSafely({
+      to: {
+        email,
+        name: firstName,
+      },
+      subject: 'Confirmation de reservation',
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Bonjour ${firstName},</h2>
+            <p>Votre reservation pour <strong>${reservationDetails.titre || 'votre logement'}</strong> a bien ete enregistree.</p>
+            <p>Du ${new Date(reservationDetails.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(reservationDetails.dateFin).toLocaleDateString('fr-FR')}.</p>
+          </body>
+        </html>
+      `,
+      textContent: `Bonjour ${firstName}, votre reservation pour ${reservationDetails.titre || 'votre logement'} a bien ete enregistree.`,
+      tags: ['reservation-created'],
+    }),
 
-  // Envoi d'un email de confirmation de annulation
-  sendCancelationEmail: async (email, firstName, reservationDetails) => {
-    try {
-      console.log(`Email d'annulation envoyé à ${email} pour ${firstName}`);
-      console.log('Détails de la réservation:', reservationDetails);
-      return true;
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'email:', error);
-      return false;
-    }
-  },
+  sendCancelationEmail: async (email, firstName, reservationDetails) =>
+    sendEmailSafely({
+      to: {
+        email,
+        name: firstName,
+      },
+      subject: 'Annulation de reservation',
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Bonjour ${firstName},</h2>
+            <p>Votre reservation pour <strong>${reservationDetails.titre || 'votre logement'}</strong> a ete annulee.</p>
+          </body>
+        </html>
+      `,
+      textContent: `Bonjour ${firstName}, votre reservation pour ${reservationDetails.titre || 'votre logement'} a ete annulee.`,
+      tags: ['reservation-cancelled'],
+    }),
 
-  // Envoi d'un email de notification de nouvelle réservation (hôte)
-  sendHostNotificationEmail: async (email, firstName, reservationDetails) => {
-    try {
-      console.log(`Email de notification de nouvelle réservation envoyé à ${email} pour ${firstName}`);
-      console.log('Détails de la réservation:', reservationDetails);
-      return true;
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'email:', error);
-      return false;
-    }
-  },
+  sendHostNotificationEmail: async (email, firstName, reservationDetails) =>
+    sendEmailSafely({
+      to: {
+        email,
+        name: firstName,
+      },
+      subject: 'Nouvelle reservation recue',
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Bonjour ${firstName},</h2>
+            <p>Vous avez recu une nouvelle reservation pour <strong>${reservationDetails.titre || 'votre logement'}</strong>.</p>
+          </body>
+        </html>
+      `,
+      textContent: `Bonjour ${firstName}, vous avez recu une nouvelle reservation pour ${reservationDetails.titre || 'votre logement'}.`,
+      tags: ['host-notification'],
+    }),
 };
 
 module.exports = emailHelper;
