@@ -1,5 +1,25 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const env = require('./config/env');
+
+const publicBaseUrl = (env.PUBLIC_BASE_URL || '').trim();
+const swaggerServers = publicBaseUrl
+  ? [
+      {
+        url: publicBaseUrl.replace(/\/$/, ''),
+        description: 'Public server',
+      },
+      {
+        url: `http://localhost:${env.PORT}`,
+        description: 'Local development server',
+      },
+    ]
+  : [
+      {
+        url: `http://localhost:${env.PORT}`,
+        description: 'Local development server',
+      },
+    ];
 
 const options = {
   definition: {
@@ -24,12 +44,7 @@ const options = {
         bearerAuth: [],
       },
     ],
-    servers: [
-      {
-        url: 'http://localhost:5000',
-        description: 'Development server',
-      },
-    ],
+    servers: swaggerServers,
   },
   apis: [
     './docs/swagger/auth.swagger.js',
