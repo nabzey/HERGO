@@ -7,8 +7,7 @@ RUN npm install
 
 COPY hergo-back/ ./
 
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/hergo_build?schema=public"
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/hergo_build?schema=public" npx prisma generate
 
 EXPOSE 5000
 
