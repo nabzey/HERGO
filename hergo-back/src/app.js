@@ -3,8 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const env = require('../config/env');
-const { errorHandler, notFoundHandler } = require('../helpers/errors');
+const env = require('./config/env');
+const { errorHandler, notFoundHandler } = require('./utils/errors');
 
 // Initialisation de l'application Express
 const app = express();
@@ -64,17 +64,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Importation des routes
-const authRoutes = require('../routes/auth.routes');
-const swaggerSetup = require('../swagger');
-const logementRoutes = require('../routes/logement.routes');
-const reservationRoutes = require('../routes/reservation.routes');
-const adminRoutes = require('../routes/admin.routes');
-const userRoutes = require('../routes/user.routes');
-const reviewRoutes = require('../routes/review.routes');
-const notificationRoutes = require('../routes/notification.routes');
-const calendarRoutes = require('../routes/calendar.routes');
-const settingsRoutes = require('../routes/settings.routes');
-const reclamationRoutes = require('../routes/reclamation.routes');
+const authRoutes = require('./routes/auth.routes');
+const swaggerSetup = require('./docs/swagger');
+const logementRoutes = require('./routes/logement.routes');
+const reservationRoutes = require('./routes/reservation.routes');
+const adminRoutes = require('./routes/admin.routes');
+const userRoutes = require('./routes/user.routes');
+const reviewRoutes = require('./routes/review.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const calendarRoutes = require('./routes/calendar.routes');
+const settingsRoutes = require('./routes/settings.routes');
+const reclamationRoutes = require('./routes/reclamation.routes');
+const paymentRoutes = require('./routes/payment.routes');
 
 // Routes API
 // Appliquer le rate limiter uniquement à la route de login
@@ -90,6 +91,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reclamations', reclamationRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {

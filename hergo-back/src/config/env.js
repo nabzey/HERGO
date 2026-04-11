@@ -20,6 +20,7 @@ const env = {
   BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
   BREVO_SENDER_NAME: process.env.BREVO_SENDER_NAME || 'Hergo',
   BREVO_SMS_SENDER: process.env.BREVO_SMS_SENDER || 'Hergo',
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 };
 
 module.exports = env;

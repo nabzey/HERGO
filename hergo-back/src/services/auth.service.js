@@ -1,9 +1,9 @@
-const { pool } = require('../config/db');
-const passwordHelper = require('../helpers/password.helper');
+const UserRepository = require('../repositories/user.repository');
+const passwordHelper = require('../utils/password.helper');
 const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
-const emailHelper = require('../helpers/email.helper');
-const smsHelper = require('../helpers/sms.helper');
-const { AuthenticationError, ConflictError, NotFoundError } = require('../helpers/errors');
+const emailHelper = require('../utils/email.helper');
+const smsHelper = require('../utils/sms.helper');
+const { AuthenticationError, ConflictError, NotFoundError } = require('../utils/errors');
 
 const normalizeRole = (role = 'VOYAGEUR') => {
   const roleMap = {
@@ -28,8 +28,8 @@ const authService = {
       const normalizedRole = normalizeRole(role);
 
       // Vérifier si l'utilisateur existe déjà
-      const [existingUsers] = await pool.execute('SELECT * FROM User WHERE email = ?', [email]);
-      if (existingUsers.length > 0) {
+      const existingUser = await UserRepository.findByEmail(email);
+      if (existingUser) {
         throw new ConflictError('Email déjà utilisé');
       }
 
@@ -42,23 +42,15 @@ const authService = {
       const hashedPassword = await passwordHelper.hashPassword(password);
 
       // Créer l'utilisateur
-      const [result] = await pool.execute(
-        'INSERT INTO User (firstName, lastName, email, password, role, phone, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-        [firstName, lastName, email, hashedPassword, normalizedRole, phone]
-      );
-
-      const user = {
-        id: result.insertId,
+      const user = await UserRepository.create({
         firstName,
         lastName,
         email,
+        password: hashedPassword,
         role: normalizedRole,
-        status: 'ACTIF',
         phone,
-        avatar: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+        status: 'ACTIF'
+      });
 
       // Envoyer email de confirmation
       await emailHelper.sendRegistrationEmail(email, firstName);
@@ -80,12 +72,10 @@ const authService = {
       const { email, password } = data;
 
       // Vérifier si l'utilisateur existe
-      const [users] = await pool.execute('SELECT * FROM User WHERE email = ?', [email]);
-      if (users.length === 0) {
+      const user = await UserRepository.findByEmail(email);
+      if (!user) {
         throw new AuthenticationError('Email ou mot de passe incorrect');
       }
-
-      const user = users[0];
 
       // Vérifier le mot de passe
       const isPasswordValid = await passwordHelper.comparePassword(password, user.password);
@@ -128,16 +118,12 @@ const authService = {
     try {
       const decoded = verifyRefreshToken(refreshToken);
       
-      const [users] = await pool.execute(
-        'SELECT id, email, role FROM User WHERE id = ?',
-        [decoded.id]
-      );
+      const user = await UserRepository.findById(decoded.id);
 
-      if (users.length === 0) {
+      if (!user) {
         throw new AuthenticationError('Utilisateur non trouvé');
       }
 
-      const user = users[0];
       const newToken = generateToken({ id: user.id, email: user.email, role: user.role });
       const newRefreshToken = generateRefreshToken({ id: user.id });
 
@@ -150,16 +136,13 @@ const authService = {
   // Récupérer les informations de l'utilisateur connecté
   getCurrentUser: async (userId) => {
     try {
-      const [users] = await pool.execute(
-        'SELECT id, firstName, lastName, email, role, status, phone, avatar, createdAt, updatedAt FROM User WHERE id = ?',
-        [userId]
-      );
+      const user = await UserRepository.findById(userId);
 
-      if (users.length === 0) {
+      if (!user) {
         throw new NotFoundError('Utilisateur non trouvé');
       }
 
-      return users[0];
+      return user;
     } catch (error) {
       throw error;
     }

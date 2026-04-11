@@ -2,12 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl libssl
+
 COPY hergo-back/package*.json ./
 RUN npm install
 
 COPY hergo-back/ ./
-
-RUN DATABASE_URL="postgresql://build:build@localhost:5432/hergo_build?schema=public" npx prisma generate
+RUN npx prisma generate
 
 EXPOSE 5000
 

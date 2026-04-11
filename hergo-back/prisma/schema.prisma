@@ -3,7 +3,6 @@
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -12,25 +11,25 @@ generator client {
 
 // Modèle User
 model User {
-  id          Int      @id @default(autoincrement())
-  firstName   String
-  lastName    String
-  email       String   @unique
-  password    String
-  role        Role     @default(VOYAGEUR)
-  status      Status   @default(ACTIF)
-  phone       String?
-  avatar      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  role      Role     @default(VOYAGEUR)
+  status    Status   @default(ACTIF)
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  voyages         Voyage[]
-  logements       Logement[]
-  reservations    Reservation[]
-  reviews         Review[]
-  notifications   Notification[]
-  reclamations    Reclamation[]
+  voyages       Voyage[]
+  logements     Logement[]
+  reservations  Reservation[]
+  reviews       Review[]
+  notifications Notification[]
+  reclamations  Reclamation[]
 
   @@map("User")
 }
@@ -60,36 +59,36 @@ model Voyage {
   updatedAt       DateTime @updatedAt
 
   // Relations
-  voyageur        User     @relation(fields: [idVoyageur], references: [id])
+  voyageur User @relation(fields: [idVoyageur], references: [id])
 
   @@map("Voyage")
 }
 
 // Modèle Logement
 model Logement {
-  id              Int         @id @default(autoincrement())
-  titre           String
-  description     String
-  prixJour        Float
-  capacite        Int
-  adresse         String
-  ville           String
-  pays            String
-  longitude       Float?
-  latitude        Float?
-  statut          LogementStatus @default(PUBLIE)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  idProprietaire  Int
+  id             Int            @id @default(autoincrement())
+  titre          String
+  description    String
+  prixJour       Float
+  capacite       Int
+  adresse        String
+  ville          String
+  pays           String
+  longitude      Float?
+  latitude       Float?
+  statut         LogementStatus @default(PUBLIE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  idProprietaire Int
 
   // Relations
-  proprietaire    User        @relation(fields: [idProprietaire], references: [id])
-  images          Image[]
-  equipements     Equipement[]
-  espaces         Espace[]
-  reservations    Reservation[]
-  reviews         Review[]
-  reclamations    Reclamation[]
+  proprietaire User          @relation(fields: [idProprietaire], references: [id])
+  images       Image[]
+  equipements  Equipement[]
+  espaces      Espace[]
+  reservations Reservation[]
+  reviews      Review[]
+  reclamations Reclamation[]
 
   @@map("Logement")
 }
@@ -103,50 +102,50 @@ enum LogementStatus {
 
 // Modèle Image
 model Image {
-  id              Int       @id @default(autoincrement())
-  url             String
-  idLogement      Int
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id         Int      @id @default(autoincrement())
+  url        String
+  idLogement Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  logement        Logement  @relation(fields: [idLogement], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
 
   @@map("Image")
 }
 
 // Modèle Equipement
 model Equipement {
-  id              Int       @id @default(autoincrement())
-  nom             String
-  idLogement      Int
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id         Int      @id @default(autoincrement())
+  nom        String
+  idLogement Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  logement        Logement  @relation(fields: [idLogement], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
 
   @@map("Equipement")
 }
 
 // Modèle Espace
 model Espace {
-  id              Int       @id @default(autoincrement())
-  nom             String
-  description     String
-  idLogement      Int
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          Int      @id @default(autoincrement())
+  nom         String
+  description String
+  idLogement  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  logement        Logement  @relation(fields: [idLogement], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
 
   @@map("Espace")
 }
 
 // Modèle Reservation
 model Reservation {
-  id              Int           @id @default(autoincrement())
+  id              Int               @id @default(autoincrement())
   idVoyageur      Int
   idLogement      Int
   dateDebut       DateTime
@@ -154,12 +153,13 @@ model Reservation {
   nombrePersonnes Int
   prixTotal       Float
   statut          ReservationStatus @default(EN_ATTENTE)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   // Relations
-  voyageur        User          @relation(fields: [idVoyageur], references: [id])
-  logement        Logement      @relation(fields: [idLogement], references: [id])
+  voyageur User      @relation(fields: [idVoyageur], references: [id])
+  logement Logement  @relation(fields: [idLogement], references: [id])
+  payments Payment[]
 
   @@map("Reservation")
 }
@@ -173,33 +173,33 @@ enum ReservationStatus {
 
 // Modèle Review
 model Review {
-  id              Int       @id @default(autoincrement())
-  idVoyageur      Int
-  idLogement      Int
-  note            Int       @default(5)
-  commentaire     String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          Int      @id @default(autoincrement())
+  idVoyageur  Int
+  idLogement  Int
+  note        Int      @default(5)
+  commentaire String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  voyageur        User      @relation(fields: [idVoyageur], references: [id])
-  logement        Logement  @relation(fields: [idLogement], references: [id])
+  voyageur User     @relation(fields: [idVoyageur], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
 
   @@map("Review")
 }
 
 // Modèle Notification
 model Notification {
-  id              Int       @id @default(autoincrement())
-  idUser          Int
-  message         String
-  type            NotificationType
-  lu              Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        Int              @id @default(autoincrement())
+  idUser    Int
+  message   String
+  type      NotificationType
+  lu        Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   // Relations
-  user            User      @relation(fields: [idUser], references: [id])
+  user User @relation(fields: [idUser], references: [id])
 
   @@map("Notification")
 }
@@ -213,18 +213,18 @@ enum NotificationType {
 
 // Modèle Reclamation
 model Reclamation {
-  id              Int           @id @default(autoincrement())
-  idVoyageur      Int
-  idLogement      Int
-  sujet           String
-  description     String
-  statut          ReclamationStatus @default(EN_ATTENTE)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id          Int               @id @default(autoincrement())
+  idVoyageur  Int
+  idLogement  Int
+  sujet       String
+  description String
+  statut      ReclamationStatus @default(EN_ATTENTE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   // Relations
-  voyageur        User          @relation(fields: [idVoyageur], references: [id])
-  logement        Logement      @relation(fields: [idLogement], references: [id])
+  voyageur User     @relation(fields: [idVoyageur], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
 
   @@map("Reclamation")
 }
@@ -234,4 +234,28 @@ enum ReclamationStatus {
   EN_TRAITEMENT
   RESOLU
   REJETE
+}
+
+// Modèle Payment
+model Payment {
+  id              Int           @id @default(autoincrement())
+  idReservation   Int
+  stripePaymentId String?
+  amount          Float
+  currency        String        @default("eur")
+  status          PaymentStatus @default(EN_ATTENTE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  reservation Reservation @relation(fields: [idReservation], references: [id])
+
+  @@map("Payment")
+}
+
+enum PaymentStatus {
+  EN_ATTENTE
+  CONFIRME
+  ECHOUE
+  REMBOURSE
 }
