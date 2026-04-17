@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   User, Mail, Phone, Users, CalendarDays, MapPin, Star,
@@ -34,8 +34,6 @@ const ReservationPage = () => {
   const [logement, setLogement] = useState<Logement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
   const [form, setForm] = useState({
     nom: '',
     email: '',
@@ -104,7 +102,6 @@ const ReservationPage = () => {
     e.preventDefault();
     if (!logement) return;
     
-    setSubmitting(true);
     setError('');
     
     try {
@@ -114,14 +111,13 @@ const ReservationPage = () => {
         dateDebut: dateArrivee,
         dateFin: dateDepart,
         nombrePersonnes,
-      }) as unknown as { reservation: { id: number } };
+      }) as { id: number };
       
-      navigate(`/mes-reservations/${response.reservation.id}`);
+      navigate(`/mes-reservations/${response.id}`);
     } catch (err: unknown) {
       const error = err as Error;
       setError(error.message || 'Erreur lors de la création de la réservation');
     } finally {
-      setSubmitting(false);
     }
   };
 

@@ -1,10 +1,34 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:5000/api';
 
 interface RequestOptions {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
 }
+
+const isFormData = (value: unknown): value is FormData =>
+  typeof FormData !== 'undefined' && value instanceof FormData;
+
+const extractList = <T>(payload: unknown, key: string): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[];
+  }
+
+  if (payload && typeof payload === 'object' && Array.isArray((payload as Record<string, unknown>)[key])) {
+    return (payload as Record<string, unknown>)[key] as T[];
+  }
+
+  return [];
+};
+
+const extractItem = <T>(payload: unknown, key: string): T => {
+  if (payload && typeof payload === 'object' && key in (payload as Record<string, unknown>)) {
+    return (payload as Record<string, unknown>)[key] as T;
+  }
+
+  return payload as T;
+};
 
 const getAuthToken = (): string | null => {
   // Essayer d'abord de récupérer le token depuis hergoToken
@@ -31,21 +55,23 @@ const apiRequest = async <T>(endpoint: string, options: RequestOptions = {}): Pr
   
   const token = getAuthToken();
   const defaultHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
+    ...(isFormData(body) ? {} : { 'Content-Type': 'application/json' }),
     ...headers,
   };
 
   const config: RequestInit = {
     method,
     headers: defaultHeaders,
-    ...(body !== undefined && { body: JSON.stringify(body) }),
+    ...(body !== undefined && { body: isFormData(body) ? body : JSON.stringify(body) }),
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erreur réseau' }));
+    const error = await response
+      .json()
+      .catch(() => ({ message: `Erreur ${response.status}` }));
     throw new Error(error.message || `Erreur ${response.status}`);
   }
 
@@ -54,11 +80,19 @@ const apiRequest = async <T>(endpoint: string, options: RequestOptions = {}): Pr
 
 // Auth API
 export const authApi = {
-  register: (data: { name: string; email: string; password: string; role: string; phone?: string }) =>
-    apiRequest<{ user: unknown; token: string }>('/auth/register', { method: 'POST', body: data }),
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    phone?: string;
+    phoneCountryCode?: string;
+    phoneNationalNumber?: string;
+  }) =>
+    apiRequest<{ user: unknown; token?: string; refreshToken?: string; continuationLink?: string }>('/auth/register', { method: 'POST', body: data }),
   
   login: (data: { email: string; password: string }) =>
-    apiRequest<{ user: unknown; token: string }>('/auth/login', { method: 'POST', body: data }),
+    apiRequest<{ user: unknown; token: string; refreshToken?: string }>('/auth/login', { method: 'POST', body: data }),
   
   getCurrentUser: () =>
     apiRequest<unknown>('/auth/me'),
@@ -75,58 +109,76 @@ export const usersApi = {
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiRequest<unknown>('/users/password', { method: 'PUT', body: data }),
   
-  getMyReservations: () =>
-    apiRequest<unknown[]>('/users/reservations'),
+  getMyReservations: async () =>
+    extractList<unknown>(await apiRequest('/users/reservations'), 'reservations'),
   
-  getMyReviews: () =>
-    apiRequest<unknown[]>('/users/reviews'),
+  getMyReviews: async () =>
+    extractList<unknown>(await apiRequest('/users/reviews'), 'reviews'),
   
-  getMyNotifications: () =>
-    apiRequest<unknown[]>('/users/notifications'),
+  getMyNotifications: async () =>
+    extractList<unknown>(await apiRequest('/users/notifications'), 'notifications'),
 };
 
 // Logements API
 export const logementsApi = {
-  getAll: (params?: Record<string, string>) => {
+  getAll: async (params?: Record<string, string>) => {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return apiRequest<unknown[]>(`/logements${queryString}`);
+    return extractList<unknown>(await apiRequest(`/logements${queryString}`), 'logements');
   },
   
   getById: (id: string | number) =>
     apiRequest<unknown>(`/logements/${id}`),
   
-  create: (data: unknown) =>
-    apiRequest<unknown>('/logements', { method: 'POST', body: data }),
+  create: async (data: unknown) =>
+    extractItem<unknown>(await apiRequest('/logements', { method: 'POST', body: data }), 'logement'),
   
-  update: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/logements/${id}`, { method: 'PUT', body: data }),
+  update: async (id: string | number, data: unknown) =>
+    extractItem<unknown>(await apiRequest(`/logements/${id}`, { method: 'PUT', body: data }), 'logement'),
   
   delete: (id: string | number) =>
     apiRequest<unknown>(`/logements/${id}`, { method: 'DELETE' }),
   
-  manageImages: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/logements/${id}/images`, { method: 'PUT', body: data }),
+  uploadImage: (id: string | number, data: FormData) =>
+    apiRequest<unknown>(`/logements/${id}/images/upload`, { method: 'POST', body: data }),
   
-  manageEquipements: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/logements/${id}/equipements`, { method: 'PUT', body: data }),
+  manageImages: async (id: string | number, images: string[]) =>
+    extractItem<unknown>(
+      await apiRequest(`/logements/${id}/images`, { method: 'PUT', body: { images } }),
+      'logement'
+    ),
   
-  manageEspaces: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/logements/${id}/espaces`, { method: 'PUT', body: data }),
+  manageEquipements: async (id: string | number, equipements: string[]) =>
+    extractItem<unknown>(
+      await apiRequest(`/logements/${id}/equipements`, { method: 'PUT', body: { equipements } }),
+      'logement'
+    ),
+  
+  manageEspaces: async (id: string | number, espaces: unknown[]) =>
+    extractItem<unknown>(
+      await apiRequest(`/logements/${id}/espaces`, { method: 'PUT', body: { espaces } }),
+      'logement'
+    ),
 };
 
 // Reservations API
 export const reservationsApi = {
-  getAll: () =>
-    apiRequest<unknown[]>('/reservations'),
+  getAll: async () =>
+    extractList<unknown>(await apiRequest('/reservations'), 'reservations'),
   
   getById: (id: string | number) =>
     apiRequest<unknown>(`/reservations/${id}`),
   
-  create: (data: unknown) =>
-    apiRequest<unknown>('/reservations', { method: 'POST', body: data }),
+  create: async (data: unknown) =>
+    extractItem<unknown>(await apiRequest('/reservations', { method: 'POST', body: data }), 'reservation'),
   
-  updateStatus: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/reservations/${id}/status`, { method: 'PUT', body: data }),
+  updateStatus: async (id: string | number, data: { statut?: string; status?: string }) =>
+    extractItem<unknown>(
+      await apiRequest(`/reservations/${id}/status`, {
+        method: 'PUT',
+        body: { statut: data.statut || data.status },
+      }),
+      'reservation'
+    ),
   
   cancel: (id: string | number) =>
     apiRequest<unknown>(`/reservations/${id}/cancel`, { method: 'PUT' }),
@@ -137,8 +189,8 @@ export const reservationsApi = {
 
 // Reviews API
 export const reviewsApi = {
-  getByLogement: (logementId: string | number) =>
-    apiRequest<unknown[]>(`/reviews/logement/${logementId}`),
+  getByLogement: async (logementId: string | number) =>
+    extractList<unknown>(await apiRequest(`/reviews/logement/${logementId}`), 'reviews'),
   
   getById: (id: string | number) =>
     apiRequest<unknown>(`/reviews/${id}`),
@@ -155,8 +207,8 @@ export const reviewsApi = {
 
 // Notifications API
 export const notificationsApi = {
-  getAll: () =>
-    apiRequest<unknown[]>('/notifications'),
+  getAll: async () =>
+    extractList<unknown>(await apiRequest('/notifications'), 'notifications'),
   
   getById: (id: string | number) =>
     apiRequest<unknown>(`/notifications/${id}`),
@@ -179,32 +231,38 @@ export const adminApi = {
   getStatistics: () =>
     apiRequest<unknown>('/admin/statistics'),
   
-  getAllUsers: () =>
-    apiRequest<unknown[]>('/admin/users'),
+  getAllUsers: async () =>
+    extractList<unknown>(await apiRequest('/admin/users'), 'users'),
   
   getUserById: (id: string | number) =>
     apiRequest<unknown>(`/admin/users/${id}`),
   
-  updateUser: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/admin/users/${id}`, { method: 'PUT', body: data }),
+  updateUser: async (id: string | number, data: { role?: string; status?: string }) =>
+    extractItem<unknown>(await apiRequest(`/admin/users/${id}`, { method: 'PUT', body: data }), 'user'),
   
   deleteUser: (id: string | number) =>
     apiRequest<unknown>(`/admin/users/${id}`, { method: 'DELETE' }),
   
-  getAllLogements: () =>
-    apiRequest<unknown[]>('/admin/logements'),
+  getAllLogements: async () =>
+    extractList<unknown>(await apiRequest('/admin/logements'), 'logements'),
   
-  updateLogementStatus: (id: string | number, data: unknown) =>
-    apiRequest<unknown>(`/admin/logements/${id}/status`, { method: 'PUT', body: data }),
+  updateLogementStatus: async (id: string | number, data: { statut?: string; status?: string }) =>
+    extractItem<unknown>(
+      await apiRequest(`/admin/logements/${id}/status`, {
+        method: 'PUT',
+        body: { statut: data.statut || data.status },
+      }),
+      'logement'
+    ),
   
   deleteLogement: (id: string | number) =>
     apiRequest<unknown>(`/admin/logements/${id}`, { method: 'DELETE' }),
   
-  getAllReservations: () =>
-    apiRequest<unknown[]>('/admin/reservations'),
+  getAllReservations: async () =>
+    extractList<unknown>(await apiRequest('/admin/reservations'), 'reservations'),
   
-  getAllReclamations: () =>
-    apiRequest<unknown[]>('/admin/reclamations'),
+  getAllReclamations: async () =>
+    extractList<unknown>(await apiRequest('/admin/reclamations'), 'reclamations'),
   
   updateReclamationStatus: (id: string | number, data: unknown) =>
     apiRequest<unknown>(`/admin/reclamations/${id}/status`, { method: 'PUT', body: data }),
@@ -247,4 +305,21 @@ export const settingsApi = {
   
   update: (data: unknown) =>
     apiRequest<unknown>('/settings', { method: 'PUT', body: data }),
+};
+
+// Favoris API
+export const favorisApi = {
+  getAll: async () =>
+    extractList<unknown>(await apiRequest('/favoris'), 'favoris'),
+  
+  add: (idLogement: number) =>
+    apiRequest<unknown>('/favoris', { method: 'POST', body: { idLogement } }),
+  
+  remove: (idLogement: number) =>
+    apiRequest<unknown>(`/favoris/${idLogement}`, { method: 'DELETE' }),
+  
+  check: async (idLogement: number) => {
+    const result = await apiRequest<{ isFavori: boolean }>(`/favoris/check/${idLogement}`);
+    return result.isFavori;
+  },
 };

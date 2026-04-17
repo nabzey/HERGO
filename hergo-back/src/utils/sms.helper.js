@@ -25,10 +25,10 @@ const sendSmsSafely = async ({ phone, content, tag }) => {
 };
 
 const smsHelper = {
-  sendRegistrationSms: async (phone, firstName) =>
+  sendRegistrationSms: async (phone, firstName, continuationLink) =>
     sendSmsSafely({
       phone,
-      content: `Bienvenue ${firstName} sur Hergo. Votre compte est cree.`,
+      content: `Bienvenue ${firstName} sur Hergo. Continuez votre inscription ici: ${continuationLink}`,
       tag: 'registration',
     }),
 

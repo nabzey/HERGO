@@ -44,7 +44,7 @@ const authLimiter = rateLimit({
 // Middleware globaux
 const allowedOrigins = env.CORS_ORIGIN
   ? env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000'];
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -76,6 +76,7 @@ const calendarRoutes = require('./routes/calendar.routes');
 const settingsRoutes = require('./routes/settings.routes');
 const reclamationRoutes = require('./routes/reclamation.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const favorisRoutes = require('./routes/favoris.routes');
 
 // Routes API
 // Appliquer le rate limiter uniquement à la route de login
@@ -92,6 +93,7 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reclamations', reclamationRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/favoris', favorisRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {

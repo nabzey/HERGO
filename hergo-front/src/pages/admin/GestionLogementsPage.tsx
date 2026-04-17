@@ -17,6 +17,35 @@ interface Logement {
   image: string;
 }
 
+interface ApiLogement {
+  id: number;
+  titre: string;
+  ville: string;
+  pays?: string;
+  prixJour: number;
+  statut: string;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string | null;
+}
+
+const mapLogement = (logement: ApiLogement): Logement => ({
+  id: logement.id,
+  name: logement.titre,
+  location: [logement.ville, logement.pays].filter(Boolean).join(', '),
+  hote: `${logement.firstName || ''} ${logement.lastName || ''}`.trim() || 'Hôte inconnu',
+  type: 'Logement',
+  price: Number(logement.prixJour || 0).toLocaleString('fr-FR'),
+  reservations: 0,
+  status:
+    logement.statut === 'PUBLIE'
+      ? 'publié'
+      : logement.statut === 'BROUILLON'
+        ? 'brouillon'
+        : 'en attente',
+  image: logement.avatar || '/vite.svg',
+});
+
 const ADMIN_LINKS = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutGrid size={16} /> },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: <Users size={16} /> },
@@ -35,8 +64,8 @@ const GestionLogementsPage = () => {
   useEffect(() => {
     const fetchLogements = async () => {
       try {
-        const response = await adminApi.getAllLogements() as unknown as { logements: Logement[] };
-        setLogements(response.logements || []);
+        const response = await adminApi.getAllLogements() as ApiLogement[];
+        setLogements(response.map(mapLogement));
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des logements');
@@ -55,7 +84,7 @@ const GestionLogementsPage = () => {
 
   const handlePublish = async (id: number) => {
     try {
-      await adminApi.updateLogementStatus(id, { status: 'publié' });
+      await adminApi.updateLogementStatus(id, { statut: 'PUBLIE' });
       setLogements(logements.map(l =>
         l.id === id ? { ...l, status: 'publié' } : l
       ));
@@ -67,7 +96,7 @@ const GestionLogementsPage = () => {
 
   const handleHide = async (id: number) => {
     try {
-      await adminApi.updateLogementStatus(id, { status: 'masqué' });
+      await adminApi.updateLogementStatus(id, { statut: 'REJETE' });
       setLogements(logements.map(l =>
         l.id === id ? { ...l, status: 'masqué' } : l
       ));

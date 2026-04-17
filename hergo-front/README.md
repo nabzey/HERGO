@@ -78,6 +78,18 @@ npm install
 npm run dev
 ```
 
+### Connexion au backend
+
+Le front lit l'API depuis `VITE_API_BASE_URL`.
+
+Exemple de fichier `.env` local :
+
+```bash
+VITE_API_BASE_URL=http://localhost:5000/api
+```
+
+Si vous lancez le backend localement avec Postgres dans Docker, verifiez aussi que le backend utilise une `DATABASE_URL` en `127.0.0.1` avec le bon port publie par Docker.
+
 ### Test
 
 Pour tester l'application, vous pouvez utiliser les identifiants suivants :

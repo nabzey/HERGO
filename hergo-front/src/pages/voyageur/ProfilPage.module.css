@@ -226,6 +226,22 @@
   color: var(--color-text-light);
 }
 
+.eyeBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+}
+
+.eyeBtn:hover {
+  color: var(--color-primary);
+}
+
 .textarea {
   background: rgba(28, 25, 22, 0.6);
   border: 1.5px solid var(--color-border);

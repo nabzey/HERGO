@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LayoutGrid, Users, Home, ShieldCheck, BarChart2, Search, UserX, UserCheck } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../core/api/api';
+import { usersMockApi, type MockUserRecord } from '../../services/usersMockApi';
 import dStyles from '../../components/DashboardLayout.module.css';
 import styles from './GestionUtilisateursPage.module.css';
 
@@ -15,6 +16,30 @@ interface User {
   reservations: number;
   status: string;
 }
+
+interface ApiUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatar?: string | null;
+  role: string;
+  phone?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  status: string;
+}
+
+const mapMockUser = (user: MockUserRecord): User => ({
+  id: user.id,
+  name: `${user.firstName} ${user.lastName}`.trim(),
+  email: user.email,
+  avatar: user.avatar || `https://i.pravatar.cc/40?u=${user.email}`,
+  role: user.role === 'HOTE' ? 'Hôte' : user.role === 'ADMIN' ? 'Admin' : 'Voyageur',
+  joinDate: new Date(user.createdAt).toLocaleDateString('fr-FR'),
+  reservations: user.reservations,
+  status: user.status === 'SUSPENDU' ? 'suspendu' : user.status === 'BANNI' ? 'banni' : 'actif',
+});
 
 const ADMIN_LINKS = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutGrid size={16} /> },
@@ -33,12 +58,15 @@ const GestionUtilisateursPage = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setLoading(true);
       try {
-        const data = await adminApi.getAllUsers() as User[];
-        setUsers(data);
+        const data = await adminApi.getAllUsers() as ApiUser[];
+        usersMockApi.seedFromApi(data);
+        setUsers(usersMockApi.getAll().map(mapMockUser));
       } catch (err: unknown) {
+        setUsers(usersMockApi.getAll().map(mapMockUser));
         const error = err as Error;
-        setError(error.message || 'Erreur lors du chargement des utilisateurs');
+        setError(error.message || 'Affichage des utilisateurs depuis la base mock locale');
       } finally {
         setLoading(false);
       }
@@ -55,25 +83,25 @@ const GestionUtilisateursPage = () => {
   const handleSuspend = async (id: number) => {
     try {
       await adminApi.updateUser(id, { status: 'suspendu' });
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, status: 'suspendu' } : u
-      ));
     } catch (err: unknown) {
       const error = err as Error;
-      setError(error.message || 'Erreur lors de la suspension');
+      setError(error.message || 'Utilisateur suspendu dans la base mock locale');
     }
+
+    usersMockApi.update(id, { status: 'SUSPENDU' });
+    setUsers(usersMockApi.getAll().map(mapMockUser));
   };
 
   const handleReactivate = async (id: number) => {
     try {
       await adminApi.updateUser(id, { status: 'actif' });
-      setUsers(users.map(u =>
-        u.id === id ? { ...u, status: 'actif' } : u
-      ));
     } catch (err: unknown) {
       const error = err as Error;
-      setError(error.message || 'Erreur lors de la réactivation');
+      setError(error.message || 'Utilisateur réactivé dans la base mock locale');
     }
+
+    usersMockApi.update(id, { status: 'ACTIF' });
+    setUsers(usersMockApi.getAll().map(mapMockUser));
   };
 
   if (loading) {

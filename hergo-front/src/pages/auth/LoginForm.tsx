@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { authApi } from '../../core/api/api';
+import { getDashboardRoute, useAuth } from '../../hooks/useAuth';
 import styles from './AuthPage.module.css';
 
 interface LoginFormProps {
@@ -13,32 +12,21 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
       const user = await login(email, password);
-      
-      // Rediriger vers la page correspondant au rôle de l'utilisateur
-      if (user.role === 'Voyageur') {
-        navigate('/profil');
-      } else if (user.role === 'Hôte') {
-        navigate('/hote/dashboard');
-      } else if (user.role === 'Admin') {
-        navigate('/admin/dashboard');
-      }
+      navigate(getDashboardRoute(user.role), { replace: true });
     } catch (err: unknown) {
       const error = err as Error;
       setError(error.message || 'Erreur lors de la connexion');
     } finally {
-      setLoading(false);
     }
   };
 

@@ -1,0 +1,279 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(201, 165, 112, 0.1), transparent 22%),
+    linear-gradient(180deg, #16120f 0%, #221b16 100%);
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.heroInner {
+  width: 100%;
+  max-width: 1240px;
+}
+
+.heroCard {
+  position: relative;
+  min-height: min(88vh, 980px);
+  border-radius: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+  background: #171310;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.backgroundStack {
+  position: absolute;
+  inset: 0;
+}
+
+.backgroundSlide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: fadeStack 38.4s linear infinite;
+}
+
+.backgroundMedia {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.04);
+  animation: mediaZoom 10s ease-in-out infinite;
+  filter: saturate(0.92) brightness(0.82);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(24, 19, 14, 0.2) 0%, rgba(24, 19, 14, 0.18) 32%, rgba(24, 19, 14, 0.42) 58%, rgba(24, 19, 14, 0.7) 100%),
+    radial-gradient(circle at center, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.28));
+  z-index: 1;
+}
+
+.brand {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  align-self: flex-start;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: rgba(49, 39, 30, 0.78);
+  border: 1px solid rgba(201, 165, 112, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.brandIcon {
+  width: 34px;
+  height: 34px;
+  background: var(--gradient-logo);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1c1917;
+}
+
+.brandText {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #f6cf8c;
+}
+
+.copy {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: auto auto 0;
+  text-align: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 247, 234, 0.92);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: rgba(255, 247, 234, 0.86);
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-family: var(--font-family-display);
+  font-size: clamp(3.4rem, 7vw, 6rem);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  color: #fff8ec;
+  text-shadow: 0 10px 35px rgba(0, 0, 0, 0.28);
+}
+
+.description {
+  margin: 0 auto;
+  max-width: 28ch;
+  color: rgba(255, 245, 232, 0.92);
+  font-size: 1.2rem;
+  line-height: 1.55;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+}
+
+.footerRow {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  border-radius: 18px;
+  padding: 1rem 1.35rem;
+  font-weight: 700;
+  color: #1b140f;
+  background: rgba(241, 242, 236, 0.72);
+  backdrop-filter: blur(10px);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  background: rgba(246, 247, 240, 0.84);
+}
+
+.swipeHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  color: rgba(255, 248, 236, 0.9);
+}
+
+.swipeLabel {
+  font-size: 0.95rem;
+}
+
+.swipeIcon {
+  width: 58px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+@keyframes mediaZoom {
+  0%,
+  100% {
+    transform: scale(1.04);
+  }
+
+  50% {
+    transform: scale(1.09);
+  }
+}
+
+@keyframes fadeStack {
+  0% {
+    opacity: 0;
+  }
+
+  3%,
+  8% {
+    opacity: 1;
+  }
+
+  11%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 1rem;
+  }
+
+  .heroCard {
+    min-height: min(92vh, 860px);
+    padding: 1.2rem;
+    border-radius: 28px;
+  }
+
+  .brand {
+    padding: 0.55rem 0.85rem;
+  }
+
+  .brandIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .brandText {
+    font-size: 0.85rem;
+  }
+
+  .copy {
+    max-width: 100%;
+  }
+
+  .eyebrow {
+    font-size: 0.92rem;
+  }
+
+  .title {
+    font-size: clamp(2.8rem, 12vw, 4.4rem);
+  }
+
+  .description {
+    font-size: 1rem;
+    max-width: 20ch;
+  }
+
+  .footerRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primaryButton {
+    width: 100%;
+    border-radius: 16px;
+  }
+
+  .swipeHint {
+    align-self: center;
+  }
+}

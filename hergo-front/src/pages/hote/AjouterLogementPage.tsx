@@ -55,19 +55,28 @@ const AjouterLogementPage = () => {
 
     try {
       const logementData = {
-        ...formData,
-        prix: parseFloat(formData.prix),
-        chambres: parseInt(formData.chambres) || 1,
+        titre: formData.name,
+        description: formData.description,
+        prixJour: parseFloat(formData.prix),
         capacite: parseInt(formData.capacite) || 1,
-        equipements: amenities,
+        adresse: formData.adresse,
+        ville: formData.ville,
+        pays: 'Sénégal',
+        statut: 'BROUILLON',
       };
 
       const logement = await logementsApi.create(logementData) as { id: number };
 
+      if (amenities.length > 0) {
+        await logementsApi.manageEquipements(logement.id, amenities);
+      }
+
       if (images.length > 0) {
-        const formDataImages = new FormData();
-        images.forEach((img) => formDataImages.append('images', img));
-        await logementsApi.manageImages(logement.id, formDataImages);
+        for (const image of images) {
+          const formDataImages = new FormData();
+          formDataImages.append('image', image);
+          await logementsApi.uploadImage(logement.id, formDataImages);
+        }
       }
 
       setSaved(true);

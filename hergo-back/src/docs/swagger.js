@@ -11,15 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:{port}/{basePath}',
-        variables: {
-          port: {
-            default: '5000'
-          },
-          basePath: {
-            default: 'api'
-          }
-        }
+        url: 'http://localhost:5000',
       }
     ],
     components: {

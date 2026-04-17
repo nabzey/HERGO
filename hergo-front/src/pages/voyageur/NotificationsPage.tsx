@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell, ChevronLeft, CheckCircle, XCircle, Clock
 } from 'lucide-react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import VoyageurLayout from '../../components/VoyageurLayout';
 import { notificationsApi } from '../../core/api/api';
 import styles from './NotificationsPage.module.css';
 
@@ -17,10 +16,24 @@ interface Notification {
   read: boolean;
 }
 
-import { useAuth } from '../../hooks/useAuth';
+interface ApiNotification {
+  id: number;
+  type: string;
+  message: string;
+  createdAt: string;
+  lu: boolean;
+}
+
+const mapNotification = (notification: ApiNotification): Notification => ({
+  id: notification.id,
+  type: 'update',
+  title: notification.type || 'Notification',
+  message: notification.message,
+  date: new Date(notification.createdAt).toLocaleDateString('fr-FR'),
+  read: notification.lu,
+});
 
 const NotificationsPage = () => {
-  const { user } = useAuth();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -28,8 +41,8 @@ const NotificationsPage = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const data = await notificationsApi.getAll() as Notification[];
-        setNotifs(data);
+        const data = await notificationsApi.getAll() as ApiNotification[];
+        setNotifs(data.map(mapNotification));
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des notifications');
@@ -39,145 +52,6 @@ const NotificationsPage = () => {
     };
     fetchNotifications();
   }, []);
-
-  const userNotifications: Notification[] = [
-    {
-      id: 1,
-      type: 'confirmation',
-      title: 'Réservation confirmée !',
-      message: 'Votre réservation pour Villa Sunset Paradise du 15 au 22 Mar 2026 a été confirmée.',
-      date: 'Il y a 2 jours',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'reminder',
-      title: 'Rappel de réservation',
-      message: 'Votre voyage à Dakar commence dans 1 jour ! Voici les détails de votre arrivée.',
-      date: 'Il y a 1 jour',
-      read: false,
-    },
-    {
-      id: 3,
-      type: 'update',
-      title: 'Mise à jour de votre réservation',
-      message: 'L\'hôte a mis à jour les horaires de check-in pour votre réservation.',
-      date: 'Il y a 3 jours',
-      read: true,
-    },
-    {
-      id: 4,
-      type: 'cancel',
-      title: 'Réservation annulée',
-      message: 'Votre réservation pour Villa Azur Saly a été annulée le 18 Mar 2026.',
-      date: 'Il y a 1 semaine',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'reservation',
-      title: 'Nouvelle réservation',
-      message: 'Vous avez effectué une réservation pour Villa Ocean View du 02 au 05 Avr 2026.',
-      date: 'Il y a 2 semaines',
-      read: true,
-    },
-  ];
-
-  const hostNotifications: Notification[] = [
-    {
-      id: 1,
-      type: 'reservation',
-      title: 'Nouvelle réservation',
-      message: 'Vous avez reçu une nouvelle réservation pour La Maison des Artistes du 15 au 22 Mar 2026.',
-      date: 'Il y a 2 jours',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'confirmation',
-      title: 'Paiement confirmé',
-      message: 'Le paiement pour la réservation de Amadou Diallo a été confirmé.',
-      date: 'Il y a 1 jour',
-      read: false,
-    },
-    {
-      id: 3,
-      type: 'cancel',
-      title: 'Réservation annulée',
-      message: 'La réservation pour La Villa des Palmiers du 20 au 23 Mar 2026 a été annulée.',
-      date: 'Il y a 3 jours',
-      read: true,
-    },
-    {
-      id: 4,
-      type: 'update',
-      title: 'Nouvel avis',
-      message: 'Amadou Diallo a publié un avis sur La Maison des Artistes (4.8 ★).',
-      date: 'Il y a 1 semaine',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'validation',
-      title: 'Logement validé',
-      message: 'Votre logement Le Clos de la Corniche a été validé et est maintenant disponible.',
-      date: 'Il y a 2 semaines',
-      read: true,
-    },
-  ];
-
-  const adminNotifications: Notification[] = [
-    {
-      id: 1,
-      type: 'validation',
-      title: 'Nouveau logement à valider',
-      message: 'Fatou Seck a soumis un nouveau logement pour validation: La Villa Baobab.',
-      date: 'Il y a 2 jours',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'reservation',
-      title: 'Nouvelle réservation',
-      message: 'Amadou Diallo a réservé La Maison des Artistes du 15 au 22 Mar 2026.',
-      date: 'Il y a 1 jour',
-      read: false,
-    },
-    {
-      id: 3,
-      type: 'cancel',
-      title: 'Réservation annulée',
-      message: 'La réservation pour La Villa des Palmiers du 20 au 23 Mar 2026 a été annulée.',
-      date: 'Il y a 3 jours',
-      read: true,
-    },
-    {
-      id: 4,
-      type: 'update',
-      title: 'Nouvel utilisateur',
-      message: 'Ibrahima Ndiaye a créé un compte comme voyageur.',
-      date: 'Il y a 1 semaine',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'validation',
-      title: 'Logement refusé',
-      message: 'Le logement Résidence Almadies a été refusé par la modération.',
-      date: 'Il y a 2 semaines',
-      read: true,
-    },
-  ];
-
-  const getNotifications = () => {
-    if (user?.role === 'Hôte') {
-      return hostNotifications;
-    } else if (user?.role === 'Admin') {
-      return adminNotifications;
-    } else {
-      return userNotifications;
-    }
-  };
 
   const handleMarkAllRead = async () => {
     try {
@@ -239,20 +113,16 @@ const NotificationsPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Navbar />
+      <VoyageurLayout>
         <div className={styles.inner}>
           <p>Chargement des notifications...</p>
         </div>
-        <Footer />
-      </div>
+      </VoyageurLayout>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <Navbar />
-      
+    <VoyageurLayout>
       <div className={styles.inner}>
         {error && (
           <div style={{
@@ -317,9 +187,7 @@ const NotificationsPage = () => {
           )}
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </VoyageurLayout>
   );
 };
 

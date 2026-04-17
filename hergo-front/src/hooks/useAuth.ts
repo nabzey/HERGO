@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authApi } from '../core/api/api';
+import { usersMockApi } from '../services/usersMockApi';
 
 export type UserRole = 'Voyageur' | 'Hôte' | 'Admin';
 
@@ -33,6 +34,16 @@ const normalizeUser = (user: AuthUser & { role: ApiRole }): AuthUser => ({
   role: mapApiRoleToUiRole(user.role),
 });
 
+export const getDashboardRoute = (role: UserRole) => {
+  if (role === 'Voyageur') {
+    return '/dashboard';
+  }
+  if (role === 'Hôte') {
+    return '/hote/dashboard';
+  }
+  return '/admin/dashboard';
+};
+
 export const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +56,9 @@ export const useAuth = () => {
     if (savedUser && token) {
       try {
         const userData = JSON.parse(savedUser);
-        setUser(normalizeUser(userData));
+        const normalizedUser = normalizeUser(userData);
+        setUser(normalizedUser);
+        usersMockApi.syncAuthenticatedUser(normalizedUser);
       } catch (error) {
         console.error('Erreur lors de la récupération de l\'utilisateur:', error);
         localStorage.removeItem('hergoUser');
@@ -63,7 +76,11 @@ export const useAuth = () => {
       // Sauvegarder l'utilisateur et le token
       localStorage.setItem('hergoUser', JSON.stringify(userData));
       localStorage.setItem('hergoToken', response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('hergoRefreshToken', response.refreshToken);
+      }
       
+      usersMockApi.syncAuthenticatedUser(userData);
       setUser(userData);
       return userData;
     } catch (error) {
@@ -71,16 +88,35 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (data: { name: string; email: string; password: string; role: string; phone?: string }): Promise<AuthUser> => {
+  const register = async (
+    data: {
+      name: string;
+      email: string;
+      password: string;
+      role: string;
+      phone?: string;
+      phoneCountryCode?: string;
+      phoneNationalNumber?: string;
+    },
+    options: { persistSession?: boolean } = {}
+  ): Promise<AuthUser> => {
     try {
       const response = await authApi.register(data);
       const userData = normalizeUser(response.user as AuthUser & { role: ApiRole });
-      
-      // Sauvegarder l'utilisateur et le token
-      localStorage.setItem('hergoUser', JSON.stringify(userData));
-      localStorage.setItem('hergoToken', response.token);
-      
-      setUser(userData);
+
+      if (options.persistSession !== false && response.token) {
+        localStorage.setItem('hergoUser', JSON.stringify(userData));
+        localStorage.setItem('hergoToken', response.token);
+        if ('refreshToken' in response && typeof response.refreshToken === 'string') {
+          localStorage.setItem('hergoRefreshToken', response.refreshToken);
+        }
+      }
+
+      usersMockApi.ensureRegisteredUser(data);
+      if (options.persistSession !== false) {
+        usersMockApi.syncAuthenticatedUser(userData);
+        setUser(userData);
+      }
       return userData;
     } catch (error) {
       throw error;
@@ -91,6 +127,7 @@ export const useAuth = () => {
     setUser(null);
     localStorage.removeItem('hergoUser');
     localStorage.removeItem('hergoToken');
+    localStorage.removeItem('hergoRefreshToken');
   };
 
   const isAuthenticated = () => {

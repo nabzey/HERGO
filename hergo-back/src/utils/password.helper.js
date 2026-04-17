@@ -14,8 +14,7 @@ const passwordHelper = {
 
   // Vérification de la force d'un mot de passe
   isPasswordStrong: (password) => {
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return strongPasswordRegex.test(password);
+    return typeof password === 'string' && password.trim().length >= 8;
   },
 };
 

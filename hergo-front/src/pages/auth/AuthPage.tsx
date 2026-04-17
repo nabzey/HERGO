@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LayoutGrid, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { getDashboardRoute, useAuth } from '../../hooks/useAuth';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import styles from './AuthPage.module.css';
@@ -26,6 +27,7 @@ interface AuthPageProps {
 const AuthPage = ({ defaultTab = 'connexion' }: AuthPageProps) => {
   const [activeTab, setActiveTab] = useState<AuthTab>(defaultTab);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { loading, user } = useAuth();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -33,6 +35,10 @@ const AuthPage = ({ defaultTab = 'connexion' }: AuthPageProps) => {
     }, 4500);
     return () => clearInterval(timer);
   }, []);
+
+  if (!loading && user) {
+    return <Navigate to={getDashboardRoute(user.role)} replace />;
+  }
 
   return (
     <div className={styles.page}>
@@ -49,7 +55,7 @@ const AuthPage = ({ defaultTab = 'connexion' }: AuthPageProps) => {
       </div>
 
       {/* Lien retour accueil */}
-      <Link to="/" className={styles.backLink}>
+      <Link to="/accueil" className={styles.backLink}>
         <ArrowLeft size={14} />
         Retour à l'accueil
       </Link>

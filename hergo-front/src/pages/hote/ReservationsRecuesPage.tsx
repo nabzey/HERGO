@@ -17,6 +17,40 @@ interface Reservation {
   status: string;
 }
 
+interface ApiReservation {
+  id: number;
+  titre: string;
+  firstName: string;
+  lastName: string;
+  dateDebut: string;
+  dateFin: string;
+  prixTotal: number;
+  statut: string;
+}
+
+const mapReservation = (reservation: ApiReservation): Reservation => {
+  const start = new Date(reservation.dateDebut);
+  const end = new Date(reservation.dateFin);
+  const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
+  return {
+    id: reservation.id,
+    villaName: reservation.titre,
+    image: '/vite.svg',
+    voyageur: `${reservation.firstName} ${reservation.lastName}`.trim(),
+    dateArrivee: start.toLocaleDateString('fr-FR'),
+    dateDepart: end.toLocaleDateString('fr-FR'),
+    nuits: nights,
+    montant: `${Number(reservation.prixTotal || 0).toLocaleString('fr-FR')} FCFA`,
+    status:
+      reservation.statut === 'CONFIRME'
+        ? 'confirmée'
+        : reservation.statut === 'ANNULE'
+          ? 'annulée'
+          : 'en attente',
+  };
+};
+
 const HOTE_LINKS = [
   { label: 'Tableau de bord', href: '/hote/dashboard', icon: <LayoutGrid size={16} /> },
   { label: 'Mes logements', href: '/hote/mes-logements', icon: <Home size={16} /> },
@@ -35,8 +69,8 @@ const ReservationsRecuesPage = () => {
   useEffect(() => {
     const fetchReservations = async () => {
       try {
-        const data = await reservationsApi.getAll() as Reservation[];
-        setReservations(data);
+        const data = await reservationsApi.getAll() as ApiReservation[];
+        setReservations(data.map(mapReservation));
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des réservations');
@@ -51,7 +85,7 @@ const ReservationsRecuesPage = () => {
 
   const handleConfirm = async (id: number) => {
     try {
-      await reservationsApi.updateStatus(id, { status: 'confirmée' });
+      await reservationsApi.updateStatus(id, { statut: 'CONFIRME' });
       setReservations(reservations.map(r =>
         r.id === id ? { ...r, status: 'confirmée' } : r
       ));
@@ -63,7 +97,7 @@ const ReservationsRecuesPage = () => {
 
   const handleRefuse = async (id: number) => {
     try {
-      await reservationsApi.updateStatus(id, { status: 'annulée' });
+      await reservationsApi.updateStatus(id, { statut: 'ANNULE' });
       setReservations(reservations.map(r =>
         r.id === id ? { ...r, status: 'annulée' } : r
       ));

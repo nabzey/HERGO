@@ -4,7 +4,10 @@
 
 .page {
   min-height: 100vh;
-  background-color: var(--color-bg-page);
+  background:
+    radial-gradient(circle at top left, rgba(201, 165, 112, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(23, 19, 16, 0.02), rgba(23, 19, 16, 0.06)),
+    var(--color-bg-page);
   color: var(--color-text-dark);
 }
 
@@ -19,6 +22,28 @@
   display: flex;
   align-items: flex-end;
   overflow: hidden;
+}
+
+.heroBackgroundStack {
+  position: absolute;
+  inset: 0;
+}
+
+.heroBackgroundFrame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: heroStack 38.4s linear infinite;
+}
+
+.heroBackgroundMedia {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.08);
+  animation: heroZoom 11s ease-in-out infinite;
+  filter: brightness(0.72) saturate(0.98);
 }
 
 .heroOverlay {
@@ -78,9 +103,38 @@
   letter-spacing: 0.02em;
 }
 
+@keyframes heroStack {
+  0% {
+    opacity: 0;
+  }
+
+  3%,
+  8% {
+    opacity: 1;
+  }
+
+  11%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes heroZoom {
+  0%,
+  100% {
+    transform: scale(1.08);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+}
+
 /* ---- SEARCH SECTION ---- */
 .searchSection {
-  background-color: var(--color-surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent),
+    var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -177,6 +231,85 @@
   box-shadow: var(--shadow-btn);
 }
 
+/* ---- Équipements ---- */
+.equipmentBtn {
+  background: rgba(28, 25, 22, 0.7);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-dark);
+  font-size: var(--font-size-sm);
+  padding: 0.55rem 1rem;
+  transition: border-color var(--transition-fast);
+  font-family: var(--font-family);
+  min-width: 140px;
+}
+
+.equipmentBtn:hover {
+  border-color: var(--color-primary);
+}
+
+.equipmentBtnActive {
+  border-color: var(--color-primary);
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.equipmentDropdown {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.equipmentList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.equipmentItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+}
+
+.equipmentItem:hover {
+  border-color: var(--color-primary);
+}
+
+.equipmentCheckbox {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.clearFilterBtn {
+  padding: 0.4rem 0.8rem;
+  background: transparent;
+  color: var(--color-text-gray);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.clearFilterBtn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 /* ---- Search input ---- */
 .inputWrapper {
   position: relative;
@@ -215,7 +348,9 @@
 /* ---- PROPERTY GRID ---- */
 .gridSection {
   padding: var(--spacing-2xl) 0 var(--spacing-xl);
-  background-color: var(--color-bg-page);
+  background:
+    radial-gradient(circle at right top, rgba(201, 165, 112, 0.08), transparent 20%),
+    var(--color-bg-page);
 }
 
 .gridInner {

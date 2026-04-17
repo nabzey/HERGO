@@ -1,12 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Existing pages
+import WelcomePage from './pages/acceuil/WelcomePage';
 import HomePage from './pages/acceuil/HomePage';
 import AuthPage from './pages/auth/AuthPage';
 import LogementsPage from './pages/logements/LogementsPage';
 
 // Voyageur pages
 import LogementDetailPage from './pages/voyageur/LogementDetailPage';
+import VoyageurDashboardPage from './pages/voyageur/VoyageurDashboardPage';
+import FavorisPage from './pages/voyageur/FavorisPage';
 import ProfilPage from './pages/voyageur/ProfilPage';
 import MesReservationsPage from './pages/voyageur/MesReservationsPage';
 import ReservationPage from './pages/reservations/ReservationPage';
@@ -34,20 +37,30 @@ import StatistiquesPage from './pages/admin/StatistiquesPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
-import type { UserRole } from './hooks/useAuth';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Pages publiques */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/accueil" element={<HomePage />} />
         <Route path="/connexion" element={<AuthPage defaultTab="connexion" />} />
         <Route path="/inscription" element={<AuthPage defaultTab="inscription" />} />
         <Route path="/logements" element={<LogementsPage />} />
         <Route path="/logements/:id" element={<LogementDetailPage />} />
 
         {/* Voyageur pages (protégées) */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['Voyageur']}>
+            <VoyageurDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/favoris" element={
+          <ProtectedRoute allowedRoles={['Voyageur']}>
+            <FavorisPage />
+          </ProtectedRoute>
+        } />
         <Route path="/profil" element={
           <ProtectedRoute allowedRoles={['Voyageur']}>
             <ProfilPage />

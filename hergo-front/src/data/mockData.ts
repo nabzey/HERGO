@@ -10,6 +10,21 @@ import im9 from '../assets/im9.jpeg';
 
 export type HebergementType = 'Villa' | 'Hôtel';
 
+export type Equipment = 'piscine' | 'wifi' | 'parking' | 'cuisine' | 'climatisation' | 'machine_a_laver' | 'bar' | 'terrasse' | 'jardin' | 'service_menage';
+
+export const EQUIPMENTS: { value: Equipment; label: string }[] = [
+  { value: 'piscine', label: 'Piscine' },
+  { value: 'wifi', label: 'WiFi' },
+  { value: 'parking', label: 'Parking' },
+  { value: 'cuisine', label: 'Cuisine' },
+  { value: 'climatisation', label: 'Climatisation' },
+  { value: 'machine_a_laver', label: 'Machine à laver' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'terrasse', label: 'Terrasse' },
+  { value: 'jardin', label: 'Jardin' },
+  { value: 'service_menage', label: 'Service ménage' },
+];
+
 export interface Hebergement {
   id: number;
   type: HebergementType;
@@ -20,6 +35,7 @@ export interface Hebergement {
   pricePerNight: number;
   image: string;
   isFavorite: boolean;
+  equipments: Equipment[];
 }
 
 export interface Destination {
@@ -48,6 +64,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 85000,
     image: im1,
     isFavorite: false,
+    equipments: ['piscine', 'wifi', 'parking', 'cuisine', 'climatisation', 'machine_a_laver', 'terrasse', 'jardin'],
   },
   {
     id: 2,
@@ -59,6 +76,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 45000,
     image: im2,
     isFavorite: false,
+    equipments: ['wifi', 'parking', 'climatisation', 'bar', 'service_menage'],
   },
   {
     id: 3,
@@ -70,6 +88,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 120000,
     image: im3,
     isFavorite: false,
+    equipments: ['piscine', 'wifi', 'parking', 'cuisine', 'climatisation', 'bar', 'terrasse', 'jardin', 'service_menage'],
   },
   {
     id: 4,
@@ -81,6 +100,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 30000,
     image: im4,
     isFavorite: false,
+    equipments: ['wifi', 'parking', 'climatisation', 'service_menage'],
   },
   {
     id: 5,
@@ -92,6 +112,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 55000,
     image: im5,
     isFavorite: false,
+    equipments: ['piscine', 'wifi', 'parking', 'cuisine', 'jardin'],
   },
   {
     id: 6,
@@ -103,6 +124,7 @@ export const hebergements: Hebergement[] = [
     pricePerNight: 32000,
     image: im2,
     isFavorite: false,
+    equipments: ['wifi', 'parking', 'climatisation', 'bar', 'terrasse'],
   },
 ];
 

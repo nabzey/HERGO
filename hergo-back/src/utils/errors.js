@@ -41,6 +41,14 @@ class ConflictError extends AppError {
 
 // Middleware de gestion des erreurs
 const errorHandler = (err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({
+      status: 'error',
+      message: 'JSON invalide dans la requête',
+      code: 'INVALID_JSON',
+    });
+  }
+
   if (err.isOperational) {
     return res.status(err.statusCode).json({
       status: 'error',
@@ -52,11 +60,17 @@ const errorHandler = (err, req, res, next) => {
 
   // Erreur non gérée
   console.error('Erreur non gérée:', err);
-  res.status(500).json({
+  const response = {
     status: 'error',
     message: 'Erreur interne du serveur',
     code: 'INTERNAL_ERROR',
-  });
+  };
+
+  if (process.env.NODE_ENV !== 'production') {
+    response.details = err.message;
+  }
+
+  res.status(500).json(response);
 };
 
 // Middleware pour les routes non trouvées

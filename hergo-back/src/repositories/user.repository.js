@@ -11,6 +11,14 @@ const UserRepository = {
     return await prisma.user.findUnique({ where: { email } });
   },
 
+  findByPhone: async (phone) => {
+    if (!phone) {
+      return null;
+    }
+
+    return await prisma.user.findFirst({ where: { phone } });
+  },
+
   // Créer un utilisateur
   create: async (data) => {
     return await prisma.user.create({

@@ -16,23 +16,24 @@ const sendEmailSafely = async (payload) => {
 };
 
 const emailHelper = {
-  sendRegistrationEmail: async (email, firstName) =>
+  sendRegistrationEmail: async (email, firstName, continuationLink) =>
     sendEmailSafely({
       to: {
         email,
         name: firstName,
       },
-      subject: 'Bienvenue sur Hergo',
+      subject: 'Poursuivez votre inscription sur Hergo',
       htmlContent: `
         <html>
           <body>
             <h2>Bienvenue ${firstName},</h2>
             <p>Votre compte Hergo a bien ete cree.</p>
-            <p>Vous pouvez maintenant vous connecter et utiliser la plateforme.</p>
+            <p>Utilisez ce lien pour continuer votre inscription et finaliser votre acces a la plateforme :</p>
+            <p><a href="${continuationLink}">${continuationLink}</a></p>
           </body>
         </html>
       `,
-      textContent: `Bienvenue ${firstName}, votre compte Hergo a bien ete cree.`,
+      textContent: `Bienvenue ${firstName}, poursuivez votre inscription Hergo ici: ${continuationLink}`,
       tags: ['registration'],
     }),
 

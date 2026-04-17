@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { CalendarDays, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import VoyageurLayout from '../../components/VoyageurLayout';
 import { reservationsApi } from '../../core/api/api';
 import styles from './MesReservationsPage.module.css';
 
@@ -44,8 +43,8 @@ const MesReservationsPage = () => {
   useEffect(() => {
     const fetchReservations = async () => {
       try {
-        const response = await reservationsApi.getAll() as unknown as { reservations: Reservation[] };
-        setReservations(response.reservations || []);
+        const response = await reservationsApi.getAll() as Reservation[];
+        setReservations(response || []);
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des réservations');
@@ -57,7 +56,17 @@ const MesReservationsPage = () => {
   }, []);
 
   const filtered: Reservation[] =
-    filter === 'toutes' ? reservations : reservations.filter((r) => r.statut === filter);
+    filter === 'toutes'
+      ? reservations
+      : reservations.filter((r) => {
+          const status =
+            r.statut === 'CONFIRME'
+              ? 'confirmée'
+              : r.statut === 'ANNULE'
+                ? 'annulée'
+                : 'en attente';
+          return status === filter;
+        });
 
   const handleCancel = async (id: number) => {
     try {
@@ -73,19 +82,16 @@ const MesReservationsPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Navbar />
+      <VoyageurLayout>
         <div className={styles.inner}>
           <p>Chargement des réservations...</p>
         </div>
-        <Footer />
-      </div>
+      </VoyageurLayout>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <Navbar />
+    <VoyageurLayout>
       <div className={styles.inner}>
         {error && (
           <div style={{
@@ -118,7 +124,13 @@ const MesReservationsPage = () => {
         <div className={styles.list}>
           {filtered.length === 0 && <p className={styles.empty}>Aucune réservation trouvée.</p>}
           {filtered.map((r) => {
-            const status = STATUS_CONFIG[r.statut];
+            const normalizedStatus =
+              r.statut === 'CONFIRME'
+                ? 'confirmée'
+                : r.statut === 'ANNULE'
+                  ? 'annulée'
+                  : 'en attente';
+            const status = STATUS_CONFIG[normalizedStatus];
             const badgeCls =
               status.cls === 'green' ? styles.badgeGreen : status.cls === 'yellow' ? styles.badgeYellow : styles.badgeRed;
             
@@ -153,7 +165,7 @@ const MesReservationsPage = () => {
                 <div className={styles.cardRight}>
                   <span className={styles.montant}>{r.prixTotal.toLocaleString('fr-FR')} FCFA</span>
                   <span className={styles.montantLbl}>Total payé</span>
-                  {r.statut === 'en attente' && (
+                  {normalizedStatus === 'en attente' && (
                     <button
                       className={styles.cancelBtn}
                       onClick={(e) => { e.stopPropagation(); handleCancel(r.id); }}
@@ -161,7 +173,7 @@ const MesReservationsPage = () => {
                       Annuler
                     </button>
                   )}
-                  {r.statut === 'confirmée' && (
+                  {normalizedStatus === 'confirmée' && (
                     <button
                       className={styles.reviewBtn}
                       onClick={(e) => { e.stopPropagation(); navigate(`/avis/${r.id}`); }}
@@ -175,8 +187,7 @@ const MesReservationsPage = () => {
           })}
         </div>
       </div>
-      <Footer />
-    </div>
+    </VoyageurLayout>
   );
 };
 

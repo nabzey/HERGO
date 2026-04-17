@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Lock, Camera, Check } from 'lucide-react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import { User, Mail, Phone, MapPin, Lock, Camera, Check, Eye, EyeOff } from 'lucide-react';
+import VoyageurLayout from '../../components/VoyageurLayout';
 import { usersApi } from '../../core/api/api';
 import styles from './ProfilPage.module.css';
 
@@ -12,6 +11,16 @@ const ProfilPage = () => {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [form, setForm] = useState({
     prenom: '',
     nom: '',
@@ -60,14 +69,28 @@ const ProfilPage = () => {
   const handleSave = async () => {
     setError('');
     try {
-      await usersApi.updateProfile({
-        name: `${form.prenom} ${form.nom}`,
-        email: form.email,
-        telephone: form.telephone,
-        ville: form.ville,
-        pays: form.pays,
-        bio: form.bio,
-      });
+      if (activeTab === 'securite') {
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+          setError('Les mots de passe ne correspondent pas');
+          return;
+        }
+        if (passwordForm.newPassword.length < 8) {
+          setError('Le nouveau mot de passe doit contenir au moins 8 caractères');
+          return;
+        }
+        await usersApi.updatePassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        });
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        await usersApi.updateProfile({
+          firstName: form.prenom,
+          lastName: form.nom,
+          email: form.email,
+          phone: form.telephone,
+        });
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
@@ -78,20 +101,16 @@ const ProfilPage = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Navbar />
+      <VoyageurLayout>
         <div className={styles.inner}>
           <p>Chargement du profil...</p>
         </div>
-        <Footer />
-      </div>
+      </VoyageurLayout>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <Navbar />
-
+    <VoyageurLayout>
       <div className={styles.inner}>
         {error && (
           <div style={{
@@ -215,15 +234,66 @@ const ProfilPage = () => {
               {activeTab === 'securite' && (
                 <>
                   <p className={styles.secHint}>Pour changer votre mot de passe, renseignez l'ancien puis le nouveau.</p>
-                  {['Mot de passe actuel', 'Nouveau mot de passe', 'Confirmer le mot de passe'].map((l) => (
-                    <div key={l} className={styles.field}>
-                      <label className={styles.label}>{l}</label>
-                      <div className={styles.inputWrap}>
-                        <Lock size={15} className={styles.inputIcon} />
-                        <input type="password" className={styles.input} placeholder="••••••••" />
-                      </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Mot de passe actuel</label>
+                    <div className={styles.inputWrap}>
+                      <Lock size={15} className={styles.inputIcon} />
+                      <input 
+                        type={showPasswords.current ? 'text' : 'password'} 
+                        className={styles.input} 
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
+                        placeholder="••••••••"
+                      />
+                      <button 
+                        type="button"
+                        className={styles.eyeBtn}
+                        onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
+                      >
+                        {showPasswords.current ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
                     </div>
-                  ))}
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Nouveau mot de passe</label>
+                    <div className={styles.inputWrap}>
+                      <Lock size={15} className={styles.inputIcon} />
+                      <input 
+                        type={showPasswords.new ? 'text' : 'password'} 
+                        className={styles.input} 
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
+                        placeholder="••••••••"
+                      />
+                      <button 
+                        type="button"
+                        className={styles.eyeBtn}
+                        onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
+                      >
+                        {showPasswords.new ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Confirmer le mot de passe</label>
+                    <div className={styles.inputWrap}>
+                      <Lock size={15} className={styles.inputIcon} />
+                      <input 
+                        type={showPasswords.confirm ? 'text' : 'password'} 
+                        className={styles.input} 
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                        placeholder="••••••••"
+                      />
+                      <button 
+                        type="button"
+                        className={styles.eyeBtn}
+                        onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
+                      >
+                        {showPasswords.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -255,9 +325,7 @@ const ProfilPage = () => {
           </div>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </VoyageurLayout>
   );
 };
 

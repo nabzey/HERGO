@@ -15,15 +15,17 @@ if (env.NODE_ENV !== 'production') {
 }
 
 if (localNetworkUrl) {
+  const url = localNetworkUrl.replace(/\/$/, '');
   swaggerServers.push({
-    url: localNetworkUrl.replace(/\/$/, ''),
+    url: url.startsWith('http') ? url : `http://${url}`,
     description: 'Local network server',
   });
 }
 
 if (renderUrl) {
+  const url = renderUrl.replace(/\/$/, '');
   swaggerServers.push({
-    url: renderUrl.replace(/\/$/, ''),
+    url: url.startsWith('http') ? url : `https://${url}`,
     description: 'Production server',
   });
 }
@@ -55,12 +57,12 @@ const options = {
   },
   apis: [
     './docs/swagger/auth.swagger.js',
+    './docs/swagger/admin.swagger.js',
     './docs/swagger/user.swagger.js',
     './docs/swagger/logement.swagger.js',
     './docs/swagger/reservation.swagger.js',
     './docs/swagger/review.swagger.js',
     './docs/swagger/notification.swagger.js',
-    './docs/swagger/admin.swagger.js',
   ],
 };
 

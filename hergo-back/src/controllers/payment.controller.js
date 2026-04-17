@@ -1,4 +1,5 @@
 const paymentService = require('../services/payment.service');
+const { pool } = require('../config/db');
 
 const getAllPayments = async (req, res) => {
   try {
@@ -22,8 +23,8 @@ const getPaymentById = async (req, res) => {
 
 const createPaymentIntent = async (req, res) => {
   try {
-    const { reservationId } = req.body;
-    const result = await paymentService.createPaymentIntent(reservationId);
+    const { reservationId, paymentType = 'total' } = req.body;
+    const result = await paymentService.createPaymentIntent(reservationId, paymentType);
     res.status(201).json(result);
   } catch (error) {
     console.error('Erreur lors de la création du paiement:', error);
@@ -31,8 +32,33 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
+const getPaymentAmount = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+    const [reservations] = await pool.execute(
+      'SELECT prixTotal FROM Reservation WHERE id = ?',
+      [reservationId]
+    );
+    
+    if (reservations.length === 0) {
+      return res.status(404).json({ message: 'Réservation non trouvée' });
+    }
+    
+    const prixTotal = reservations[0].prixTotal;
+    res.status(200).json({
+      total: prixTotal,
+      acompte: Math.round(prixTotal * 0.3),
+      remainingAfterAcompte: Math.round(prixTotal * 0.7),
+    });
+  } catch (error) {
+    console.error('Erreur lors du calcul du montant:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllPayments,
   getPaymentById,
   createPaymentIntent,
+  getPaymentAmount,
 };

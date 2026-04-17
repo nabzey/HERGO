@@ -3,6 +3,7 @@ const passwordHelper = require('../utils/password.helper');
 const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const emailHelper = require('../utils/email.helper');
 const smsHelper = require('../utils/sms.helper');
+const env = require('../config/env');
 const { AuthenticationError, ConflictError, NotFoundError } = require('../utils/errors');
 
 const normalizeRole = (role = 'VOYAGEUR') => {
@@ -18,24 +19,64 @@ const normalizeRole = (role = 'VOYAGEUR') => {
   return roleMap[role] || 'VOYAGEUR';
 };
 
+const normalizePhone = ({ phone, phoneCountryCode, phoneNationalNumber }) => {
+  if (phoneNationalNumber) {
+    const countryCode = String(phoneCountryCode || '').replace(/[^\d]/g, '');
+    const nationalNumber = String(phoneNationalNumber).replace(/[^\d]/g, '');
+
+    if (!nationalNumber) {
+      return null;
+    }
+
+    return `${countryCode ? `+${countryCode}` : ''}${nationalNumber}`;
+  }
+
+  if (!phone) {
+    return null;
+  }
+
+  const cleaned = String(phone).replace(/[^\d+]/g, '');
+  return cleaned || null;
+};
+
+const buildContinuationLink = (email, role) => {
+  const baseUrl = env.FRONTEND_URL || 'http://localhost:5173';
+  const params = new URLSearchParams({
+    email,
+    role,
+    source: 'registration',
+  });
+
+  return `${baseUrl.replace(/\/$/, '')}/connexion?${params.toString()}`;
+};
+
 const authService = {
   // Inscription
   register: async (data) => {
     try {
-      const { name, email, password, role = 'VOYAGEUR', phone = null } = data;
+      const { name, email, password, role = 'VOYAGEUR' } = data;
       const [firstName, ...lastNameParts] = name.split(' ');
       const lastName = lastNameParts.join(' ') || '';
       const normalizedRole = normalizeRole(role);
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedPhone = normalizePhone(data);
 
       // Vérifier si l'utilisateur existe déjà
-      const existingUser = await UserRepository.findByEmail(email);
+      const existingUser = await UserRepository.findByEmail(normalizedEmail);
       if (existingUser) {
         throw new ConflictError('Email déjà utilisé');
       }
 
+      if (normalizedPhone) {
+        const existingPhoneUser = await UserRepository.findByPhone(normalizedPhone);
+        if (existingPhoneUser) {
+          throw new ConflictError('Numéro de téléphone déjà utilisé');
+        }
+      }
+
       // Vérifier la force du mot de passe
       if (!passwordHelper.isPasswordStrong(password)) {
-        throw new AuthenticationError('Mot de passe trop faible');
+        throw new AuthenticationError('Mot de passe trop faible: minimum 8 caractères');
       }
 
       // Hacher le mot de passe
@@ -45,22 +86,24 @@ const authService = {
       const user = await UserRepository.create({
         firstName,
         lastName,
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         role: normalizedRole,
-        phone,
-        status: 'ACTIF'
+        phone: normalizedPhone,
+        status: 'ACTIF',
       });
 
-      // Envoyer email de confirmation
-      await emailHelper.sendRegistrationEmail(email, firstName);
-      await smsHelper.sendRegistrationSms(phone, firstName);
+      const continuationLink = buildContinuationLink(normalizedEmail, normalizedRole);
+
+      // Envoyer email/SMS avec lien de poursuite
+      await emailHelper.sendRegistrationEmail(normalizedEmail, firstName, continuationLink);
+      await smsHelper.sendRegistrationSms(normalizedPhone, firstName, continuationLink);
 
       // Générer les tokens JWT
       const token = generateToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = generateRefreshToken({ id: user.id });
 
-      return { user, token, refreshToken };
+      return { user, token, refreshToken, continuationLink };
     } catch (error) {
       throw error;
     }
@@ -142,7 +185,18 @@ const authService = {
         throw new NotFoundError('Utilisateur non trouvé');
       }
 
-      return user;
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        phone: user.phone,
+        avatar: user.avatar,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
     } catch (error) {
       throw error;
     }

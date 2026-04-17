@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { LayoutGrid, Users, Home, ShieldCheck, BarChart2, TrendingUp, UserCheck, ClipboardList, DollarSign } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { mockUsers, mockReservations, allLogements, pendingLogements } from '../../data/adminMockData';
+import { usersMockApi } from '../../services/usersMockApi';
 import dStyles from '../../components/DashboardLayout.module.css';
 import styles from './AdminDashboardPage.module.css';
 
@@ -13,8 +15,18 @@ export const ADMIN_LINKS = [
 ];
 
 const AdminDashboardPage = () => {
+  const currentUsers = useMemo(() => usersMockApi.getAll(), []);
+  const roleCounts = useMemo(
+    () => ({
+      voyageurs: currentUsers.filter((user) => user.role === 'VOYAGEUR').length,
+      hotes: currentUsers.filter((user) => user.role === 'HOTE').length,
+      admins: currentUsers.filter((user) => user.role === 'ADMIN').length,
+    }),
+    [currentUsers]
+  );
+
   const stats = [
-    { label: 'Utilisateurs', value: mockUsers.length, change: '+3 ce mois', icon: <Users size={18} /> },
+    { label: 'Utilisateurs', value: currentUsers.length || mockUsers.length, change: 'base mock synchronisee', icon: <Users size={18} /> },
     { label: 'Logements', value: allLogements.length, change: '+2 actifs', icon: <Home size={18} /> },
     { label: 'Réservations', value: mockReservations.length, change: '+5 cette semaine', icon: <ClipboardList size={18} /> },
     { label: 'En attente', value: pendingLogements.length, change: 'À valider', icon: <ShieldCheck size={18} /> },
@@ -56,15 +68,15 @@ const AdminDashboardPage = () => {
           <h3 className={styles.chartTitle}><UserCheck size={16} /> Répartition des utilisateurs</h3>
           <div className={styles.pieSection}>
             {[
-              { label: 'Voyageurs', count: 3, color: 'var(--color-primary)' },
-              { label: 'Hôtes', count: 2, color: '#b08aee' },
-              { label: 'Admins', count: 1, color: '#7ec88a' },
+              { label: 'Voyageurs', count: roleCounts.voyageurs, color: 'var(--color-primary)' },
+              { label: 'Hôtes', count: roleCounts.hotes, color: '#b08aee' },
+              { label: 'Admins', count: roleCounts.admins, color: '#7ec88a' },
             ].map(({ label, count, color }) => (
               <div key={label} className={styles.pieRow}>
                 <div className={styles.pieDot} style={{ background: color }} />
                 <span className={styles.pieLabel}>{label}</span>
                 <div className={styles.pieBar}>
-                  <div className={styles.pieBarFill} style={{ width: `${(count / 6) * 100}%`, background: color }} />
+                  <div className={styles.pieBarFill} style={{ width: `${(count / Math.max(currentUsers.length || 1, 1)) * 100}%`, background: color }} />
                 </div>
                 <span className={styles.pieCount}>{count}</span>
               </div>
@@ -97,20 +109,20 @@ const AdminDashboardPage = () => {
             <tr><th>Utilisateur</th><th>Rôle</th><th>Date inscription</th><th>Statut</th></tr>
           </thead>
           <tbody>
-            {mockUsers.slice(0, 4).map((u) => (
+            {(currentUsers.length ? currentUsers : []).slice(0, 4).map((u) => (
               <tr key={u.id}>
                 <td>
                   <div className={dStyles.avatarRow}>
-                    <img src={u.avatar} alt={u.name} className={dStyles.avatarSmall} />
+                    <img src={u.avatar || `https://i.pravatar.cc/40?u=${u.email}`} alt={`${u.firstName} ${u.lastName}`} className={dStyles.avatarSmall} />
                     <div>
-                      <div className={dStyles.avatarName}>{u.name}</div>
+                      <div className={dStyles.avatarName}>{`${u.firstName} ${u.lastName}`.trim()}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--color-text-gray)' }}>{u.email}</div>
                     </div>
                   </div>
                 </td>
-                <td><span className={`${dStyles.badge} ${u.role === 'Admin' ? dStyles.badgeGray : u.role === 'Hôte' ? dStyles.badgeYellow : dStyles.badgeGreen}`}>{u.role}</span></td>
-                <td>{u.joinDate}</td>
-                <td><span className={`${dStyles.badge} ${u.status === 'actif' ? dStyles.badgeGreen : u.status === 'suspendu' ? dStyles.badgeRed : dStyles.badgeGray}`}>{u.status}</span></td>
+                <td><span className={`${dStyles.badge} ${u.role === 'ADMIN' ? dStyles.badgeGray : u.role === 'HOTE' ? dStyles.badgeYellow : dStyles.badgeGreen}`}>{u.role === 'ADMIN' ? 'Admin' : u.role === 'HOTE' ? 'Hôte' : 'Voyageur'}</span></td>
+                <td>{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
+                <td><span className={`${dStyles.badge} ${u.status === 'ACTIF' ? dStyles.badgeGreen : u.status === 'SUSPENDU' ? dStyles.badgeRed : dStyles.badgeGray}`}>{u.status === 'ACTIF' ? 'actif' : u.status === 'SUSPENDU' ? 'suspendu' : 'banni'}</span></td>
               </tr>
             ))}
           </tbody>

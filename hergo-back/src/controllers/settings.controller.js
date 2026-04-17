@@ -1,25 +1,55 @@
-const { pool } = require('../config/prisma');
+const { pool } = require('../config/db');
+
+const DEFAULT_SETTINGS = {
+  emailNotifications: true,
+  reservationNotifications: true,
+  departureReminders: false,
+  monthlyNewsletter: false,
+  language: 'fr',
+  currency: 'FCFA',
+  theme: 'auto',
+};
+
+const ensureThemeColumn = async () => {
+  try {
+    await pool.execute("ALTER TABLE UserSettings ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT 'auto'");
+  } catch (error) {
+    console.warn("Colonne theme indisponible sur UserSettings:", error.message);
+  }
+};
 
 const getSettings = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [settings] = await pool.execute(
-      'SELECT * FROM UserSettings WHERE userId = ?',
-      [userId]
-    );
+    await ensureThemeColumn();
+
+    const [settings] = await pool.execute('SELECT * FROM UserSettings WHERE userId = ?', [userId]);
 
     if (settings.length === 0) {
       const [result] = await pool.execute(
-        'INSERT INTO UserSettings (userId, emailNotifications, reservationNotifications, departureReminders, monthlyNewsletter, language, currency) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [userId, true, true, false, false, 'fr', 'FCFA']
+        'INSERT INTO UserSettings (userId, emailNotifications, reservationNotifications, departureReminders, monthlyNewsletter, language, currency, theme) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          userId,
+          DEFAULT_SETTINGS.emailNotifications,
+          DEFAULT_SETTINGS.reservationNotifications,
+          DEFAULT_SETTINGS.departureReminders,
+          DEFAULT_SETTINGS.monthlyNewsletter,
+          DEFAULT_SETTINGS.language,
+          DEFAULT_SETTINGS.currency,
+          DEFAULT_SETTINGS.theme,
+        ]
       );
 
       const [newSettings] = await pool.execute('SELECT * FROM UserSettings WHERE id = ?', [result.insertId]);
       return res.json(newSettings[0]);
     }
 
-    res.json(settings[0]);
+    res.json({
+      ...DEFAULT_SETTINGS,
+      ...settings[0],
+      theme: settings[0].theme || DEFAULT_SETTINGS.theme,
+    });
   } catch (error) {
     console.error('Erreur lors de la récupération des paramètres:', error);
     res.status(500).json({ message: 'Erreur serveur' });
@@ -36,24 +66,25 @@ const updateSettings = async (req, res) => {
       monthlyNewsletter,
       language,
       currency,
+      theme,
     } = req.body;
 
-    const [existingSettings] = await pool.execute(
-      'SELECT * FROM UserSettings WHERE userId = ?',
-      [userId]
-    );
+    await ensureThemeColumn();
+
+    const [existingSettings] = await pool.execute('SELECT * FROM UserSettings WHERE userId = ?', [userId]);
 
     if (existingSettings.length === 0) {
       const [result] = await pool.execute(
-        'INSERT INTO UserSettings (userId, emailNotifications, reservationNotifications, departureReminders, monthlyNewsletter, language, currency) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO UserSettings (userId, emailNotifications, reservationNotifications, departureReminders, monthlyNewsletter, language, currency, theme) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           userId,
-          emailNotifications !== undefined ? emailNotifications : true,
-          reservationNotifications !== undefined ? reservationNotifications : true,
-          departureReminders !== undefined ? departureReminders : false,
-          monthlyNewsletter !== undefined ? monthlyNewsletter : false,
-          language !== undefined ? language : 'fr',
-          currency !== undefined ? currency : 'FCFA',
+          emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
+          reservationNotifications ?? DEFAULT_SETTINGS.reservationNotifications,
+          departureReminders ?? DEFAULT_SETTINGS.departureReminders,
+          monthlyNewsletter ?? DEFAULT_SETTINGS.monthlyNewsletter,
+          language ?? DEFAULT_SETTINGS.language,
+          currency ?? DEFAULT_SETTINGS.currency,
+          theme ?? DEFAULT_SETTINGS.theme,
         ]
       );
 
@@ -61,21 +92,28 @@ const updateSettings = async (req, res) => {
       return res.json(newSettings[0]);
     }
 
+    const current = { ...DEFAULT_SETTINGS, ...existingSettings[0] };
+
     await pool.execute(
-      'UPDATE UserSettings SET emailNotifications = ?, reservationNotifications = ?, departureReminders = ?, monthlyNewsletter = ?, language = ?, currency = ? WHERE userId = ?',
+      'UPDATE UserSettings SET emailNotifications = ?, reservationNotifications = ?, departureReminders = ?, monthlyNewsletter = ?, language = ?, currency = ?, theme = ? WHERE userId = ?',
       [
-        emailNotifications !== undefined ? emailNotifications : existingSettings[0].emailNotifications,
-        reservationNotifications !== undefined ? reservationNotifications : existingSettings[0].reservationNotifications,
-        departureReminders !== undefined ? departureReminders : existingSettings[0].departureReminders,
-        monthlyNewsletter !== undefined ? monthlyNewsletter : existingSettings[0].monthlyNewsletter,
-        language !== undefined ? language : existingSettings[0].language,
-        currency !== undefined ? currency : existingSettings[0].currency,
+        emailNotifications ?? current.emailNotifications,
+        reservationNotifications ?? current.reservationNotifications,
+        departureReminders ?? current.departureReminders,
+        monthlyNewsletter ?? current.monthlyNewsletter,
+        language ?? current.language,
+        currency ?? current.currency,
+        theme ?? current.theme ?? DEFAULT_SETTINGS.theme,
         userId,
       ]
     );
 
     const [updatedSettings] = await pool.execute('SELECT * FROM UserSettings WHERE userId = ?', [userId]);
-    res.json(updatedSettings[0]);
+    res.json({
+      ...DEFAULT_SETTINGS,
+      ...updatedSettings[0],
+      theme: updatedSettings[0]?.theme || theme || current.theme || DEFAULT_SETTINGS.theme,
+    });
   } catch (error) {
     console.error('Erreur lors de la mise à jour des paramètres:', error);
     res.status(500).json({ message: 'Erreur serveur' });

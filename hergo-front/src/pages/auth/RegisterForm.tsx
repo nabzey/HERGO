@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, UserCheck, CheckCircle, Phone, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { getDashboardRoute, useAuth } from '../../hooks/useAuth';
 import styles from './AuthPage.module.css';
 
 type Role = 'client' | 'hote';
@@ -9,6 +9,15 @@ type Role = 'client' | 'hote';
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
+
+const COUNTRY_OPTIONS = [
+  { code: '+221', label: 'Sénégal (+221)' },
+  { code: '+33', label: 'France (+33)' },
+  { code: '+225', label: "Côte d'Ivoire (+225)" },
+  { code: '+212', label: 'Maroc (+212)' },
+  { code: '+1', label: 'États-Unis / Canada (+1)' },
+  { code: '+44', label: 'Royaume-Uni (+44)' },
+];
 
 const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [role, setRole] = useState<Role>('client');
@@ -21,16 +30,26 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptCgu, setAcceptCgu] = useState(false);
   const [telephone, setTelephone] = useState('');
+  const [countryCode, setCountryCode] = useState('+221');
   const [pieceIdentite, setPieceIdentite] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    if (role === 'hote' && !telephone.trim()) {
+      setError('Le numéro de téléphone est requis pour un compte hôte.');
       return;
     }
     if (!acceptCgu) {
@@ -40,6 +59,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
     
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
       const userRole = role === 'client' ? 'VOYAGEUR' : 'HOTE';
@@ -48,15 +68,22 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         email,
         password,
         role: userRole,
-        phone: telephone.trim() || undefined,
+        phone: role === 'client' ? telephone.trim() || undefined : undefined,
+        phoneCountryCode: role === 'hote' ? countryCode : undefined,
+        phoneNationalNumber: role === 'hote' ? telephone.trim() : undefined,
+      }, {
+        persistSession: role !== 'hote',
       });
-      
-      // Rediriger vers la page correspondant au rôle
-      if (userRole === 'VOYAGEUR') {
-        navigate('/profil');
-      } else if (userRole === 'HOTE') {
-        navigate('/hote/dashboard');
+
+      if (role === 'hote') {
+        setSuccess('Compte hôte créé. Vérifiez votre email ou votre SMS pour continuer l’inscription.');
+        window.setTimeout(() => {
+          onSwitchToLogin();
+        }, 1200);
+        return;
       }
+
+      navigate(getDashboardRoute(user.role), { replace: true });
     } catch (err: unknown) {
       const error = err as Error;
       setError(error.message || 'Erreur lors de l\'inscription');
@@ -67,6 +94,19 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {success && (
+        <div style={{
+          backgroundColor: '#ecfdf5',
+          border: '1px solid #a7f3d0',
+          color: '#047857',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          fontSize: '0.875rem'
+        }}>
+          {success}
+        </div>
+      )}
       {error && (
         <div style={{
           backgroundColor: '#fef2f2',
@@ -257,18 +297,40 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         <>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="reg-telephone">Numéro de téléphone</label>
-            <div className={styles.inputWrapper}>
-              <Phone size={16} className={styles.inputIcon} />
-              <input
-                id="reg-telephone"
-                type="tel"
-                className={styles.input}
-                placeholder="+221 77 123 45 67"
-                value={telephone}
-                onChange={(e) => setTelephone(e.target.value)}
-                required
-                autoComplete="tel"
-              />
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <div className={styles.inputWrapper}>
+                  <Phone size={16} className={styles.inputIcon} />
+                  <select
+                    className={styles.input}
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    aria-label="Indicatif pays"
+                  >
+                    {COUNTRY_OPTIONS.map((option) => (
+                      <option key={option.code} value={option.code}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.inputWrapper}>
+                  <Phone size={16} className={styles.inputIcon} />
+                  <input
+                    id="reg-telephone"
+                    type="tel"
+                    className={styles.input}
+                    placeholder="77 123 45 67"
+                    value={telephone}
+                    onChange={(e) => setTelephone(e.target.value)}
+                    required
+                    autoComplete="tel-national"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

@@ -59,6 +59,7 @@
 }
 
 .navLink {
+  text-decoration: none;
   padding: 0.5rem 0.875rem;
   font-size: var(--font-size-sm);
   font-weight: 500;
@@ -74,6 +75,12 @@
   background-color: var(--color-primary-light);
 }
 
+.navLinkActive {
+  color: var(--color-primary);
+  background-color: rgba(201, 165, 112, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(201, 165, 112, 0.18);
+}
+
 /* Actions */
 .actions {
   display: flex;
@@ -83,6 +90,7 @@
 }
 
 .btnConnexion {
+  text-decoration: none;
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-text-medium);
@@ -98,6 +106,7 @@
 }
 
 .btnInscription {
+  text-decoration: none;
   padding: 0.5rem 1.25rem;
   background: var(--gradient-primary);
   color: #1c1917;

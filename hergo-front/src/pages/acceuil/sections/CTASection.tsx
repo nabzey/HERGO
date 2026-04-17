@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import styles from './CTASection.module.css';
 
 const CTASection = () => {
@@ -8,8 +9,8 @@ const CTASection = () => {
         Rejoignez des milliers de voyageurs qui font confiance à HERGO
       </p>
       <div className={styles.actions}>
-        <button className="btn-outline-white">Explorer les hébergements</button>
-        <button className="btn-outline-white">Devenir hôte</button>
+        <Link to="/logements" className={styles.actionLink}>Explorer les hébergements</Link>
+        <Link to="/inscription" className={styles.actionLink}>Devenir hôte</Link>
       </div>
     </section>
   );

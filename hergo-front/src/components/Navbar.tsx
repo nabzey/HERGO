@@ -1,5 +1,5 @@
 import { LayoutGrid, LogOut } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import styles from './Navbar.module.css';
 
@@ -9,34 +9,37 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/accueil');
   };
+
+  const homeHref = '/accueil';
 
   const getNavLinks = () => {
     if (!user) {
       return [
-        { label: 'Accueil', href: '/' },
+        { label: 'Accueil', href: '/accueil' },
         { label: 'Logements', href: '/logements' },
       ];
     }
 
     if (user.role === 'Voyageur') {
       return [
-        { label: 'Accueil', href: '/' },
+        { label: 'Accueil', href: '/accueil' },
         { label: 'Logements', href: '/logements' },
-        { label: 'Mes réservations', href: '/mes-reservations' },
-        { label: 'Profil', href: '/profil' },
+        { label: 'Dashboard', href: '/dashboard' },
       ];
     } else if (user.role === 'Hôte') {
       return [
-        { label: 'Accueil', href: '/' },
+        { label: 'Accueil', href: '/accueil' },
+        { label: 'Logements', href: '/logements' },
         { label: 'Espace Hôte', href: '/hote/dashboard' },
         { label: 'Mes logements', href: '/hote/mes-logements' },
         { label: 'Reservations', href: '/hote/reservations' },
       ];
     } else if (user.role === 'Admin') {
       return [
-        { label: 'Accueil', href: '/' },
+        { label: 'Accueil', href: '/accueil' },
+        { label: 'Logements', href: '/logements' },
         { label: 'Dashboard', href: '/admin/dashboard' },
         { label: 'Utilisateurs', href: '/admin/utilisateurs' },
         { label: 'Logements', href: '/admin/logements' },
@@ -52,19 +55,23 @@ const Navbar = () => {
     <header className={styles.navbar}>
       <div className={styles.inner}>
         {/* Logo */}
-        <Link to="/" className={styles.logo}>
+        <NavLink to={homeHref} className={styles.logo}>
           <div className={styles.logoIcon}>
             <LayoutGrid size={20} />
           </div>
           <span className={styles.logoText}>HERGO</span>
-        </Link>
+        </NavLink>
 
         {/* Navigation */}
         <nav className={styles.nav}>
           {getNavLinks().map((link) => (
-            <Link key={link.label} to={link.href} className={styles.navLink}>
+            <NavLink
+              key={`${link.label}-${link.href}`}
+              to={link.href}
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
+            >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
@@ -72,17 +79,17 @@ const Navbar = () => {
         <div className={styles.actions}>
           {!isAuthenticated() ? (
             <>
-              <Link to="/connexion" className={styles.btnConnexion}>
+              <NavLink to="/connexion" className={styles.btnConnexion}>
                 Connexion
-              </Link>
-              <Link to="/inscription" className={styles.btnInscription}>
+              </NavLink>
+              <NavLink to="/inscription" className={styles.btnInscription}>
                 Inscription
-              </Link>
+              </NavLink>
             </>
           ) : user ? (
             <>
               <span style={{ marginRight: '16px', color: 'var(--color-text)' }}>
-                Bienvenue, {user.name}
+                Bienvenue, {[user.firstName, user.lastName].filter(Boolean).join(' ')}
               </span>
               <button
                 onClick={handleLogout}

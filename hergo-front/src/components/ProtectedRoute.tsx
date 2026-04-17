@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { getDashboardRoute, useAuth } from '../hooks/useAuth';
 import type { UserRole } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -25,20 +25,11 @@ const ProtectedRoute = ({ children, allowedRoles = ['Voyageur', 'Hôte', 'Admin'
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/accueil" replace />;
   }
 
   if (!allowedRoles.includes(user.role)) {
-    // Rediriger vers la page correspondant au rôle de l'utilisateur
-    if (user.role === 'Voyageur') {
-      return <Navigate to="/profil" replace />;
-    } else if (user.role === 'Hôte') {
-      return <Navigate to="/hote/dashboard" replace />;
-    } else if (user.role === 'Admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-
-    return <Navigate to="/" replace />;
+    return <Navigate to={getDashboardRoute(user.role)} replace />;
   }
 
   return <>{children}</>;

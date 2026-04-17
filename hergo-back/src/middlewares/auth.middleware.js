@@ -1,5 +1,5 @@
-const { verifyToken } = require('../../config/jwt');
-const { pool } = require('../../config/db');
+const { verifyToken } = require('../config/jwt');
+const { pool } = require('../config/db');
 
 // Middleware pour vérifier l'authentification JWT
 const authMiddleware = async (req, res, next) => {

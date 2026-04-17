@@ -17,6 +17,33 @@ interface Logement {
   image: string;
 }
 
+interface ApiLogement {
+  id: number;
+  titre: string;
+  ville: string;
+  pays?: string;
+  prixJour: number;
+  statut: string;
+  images?: Array<{ url: string }>;
+  reviews?: unknown[];
+}
+
+const mapLogement = (logement: ApiLogement): Logement => ({
+  id: logement.id,
+  name: logement.titre,
+  location: [logement.ville, logement.pays].filter(Boolean).join(', '),
+  price: `${Number(logement.prixJour || 0).toLocaleString('fr-FR')} FCFA`,
+  reservations: 0,
+  rating: logement.reviews?.length || 0,
+  status:
+    logement.statut === 'PUBLIE'
+      ? 'publié'
+      : logement.statut === 'BROUILLON'
+        ? 'brouillon'
+        : 'en attente',
+  image: logement.images?.[0]?.url || '/vite.svg',
+});
+
 const HOTE_LINKS = [
   { label: 'Tableau de bord', href: '/hote/dashboard', icon: <LayoutGrid size={16} /> },
   { label: 'Mes logements', href: '/hote/mes-logements', icon: <Home size={16} /> },
@@ -32,8 +59,8 @@ const MesLogementsPage = () => {
   useEffect(() => {
     const fetchLogements = async () => {
       try {
-        const data = await logementsApi.getAll() as Logement[];
-        setLogements(data);
+        const data = await logementsApi.getAll() as ApiLogement[];
+        setLogements(data.map(mapLogement));
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || 'Erreur lors du chargement des logements');

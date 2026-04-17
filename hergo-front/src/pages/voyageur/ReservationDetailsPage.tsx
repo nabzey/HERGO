@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   CalendarDays, MapPin, Users, CreditCard, CheckCircle, XCircle, ChevronLeft,
@@ -60,7 +60,7 @@ const ReservationDetailsPage = () => {
     setIsCanceling(true);
     try {
       await reservationsApi.cancel(reservation.id);
-      setReservation({ ...reservation, statut: 'annulée' });
+      setReservation({ ...reservation, statut: 'ANNULE' });
       setShowCancelConfirm(false);
     } catch (err: unknown) {
       const error = err as Error;
@@ -118,12 +118,12 @@ const ReservationDetailsPage = () => {
         {/* Status Badge */}
         <div className={styles.statusHeader}>
           <div className={`${styles.statusBadge} ${
-            reservation.statut === 'confirmée' ? styles.badgeGreen :
-            reservation.statut === 'en attente' ? styles.badgeYellow : styles.badgeRed
+            reservation.statut === 'CONFIRME' ? styles.badgeGreen :
+            reservation.statut === 'EN_ATTENTE' ? styles.badgeYellow : styles.badgeRed
           }`}>
-            {reservation.statut === 'confirmée' ? <CheckCircle size={14} /> :
-             reservation.statut === 'annulée' ? <XCircle size={14} /> : <Clock size={14} />}
-            {reservation.statut}
+            {reservation.statut === 'CONFIRME' ? <CheckCircle size={14} /> :
+             reservation.statut === 'ANNULE' ? <XCircle size={14} /> : <Clock size={14} />}
+            {reservation.statut === 'CONFIRME' ? 'confirmée' : reservation.statut === 'ANNULE' ? 'annulée' : 'en attente'}
           </div>
           <span className={styles.reservationNumber}>Numéro de réservation: #HRG-{reservation.id.toString().padStart(6, '0')}</span>
         </div>
@@ -224,7 +224,7 @@ const ReservationDetailsPage = () => {
               </div>
 
               <div className={styles.actionButtons}>
-                {reservation.statut === 'confirmée' && (
+                {reservation.statut === 'CONFIRME' && (
                   <>
                     <button className={styles.modifyBtn} onClick={handleModify}>Modifier la réservation</button>
                     <button
@@ -236,7 +236,7 @@ const ReservationDetailsPage = () => {
                   </>
                 )}
                 
-                {reservation.statut === 'en attente' && (
+                {reservation.statut === 'EN_ATTENTE' && (
                   <button className={styles.confirmBtn}>Confirmer la réservation</button>
                 )}
               </div>

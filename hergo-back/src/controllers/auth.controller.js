@@ -10,6 +10,7 @@ const register = async (req, res, next) => {
       user: result.user,
       token: result.token,
       refreshToken: result.refreshToken,
+      continuationLink: result.continuationLink,
     });
   } catch (error) {
     next(error);
