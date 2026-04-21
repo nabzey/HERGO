@@ -1,16 +1,33 @@
-import { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Lock, Camera, Check, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, MapPin, Lock, Camera, Check, Eye, EyeOff, FileText } from 'lucide-react';
 import VoyageurLayout from '../../components/VoyageurLayout';
 import { usersApi } from '../../core/api/api';
+import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import styles from './ProfilPage.module.css';
 
 type TabType = 'infos' | 'securite' | 'preferences';
 
+interface ProfileData {
+  prenom: string;
+  nom: string;
+  email: string;
+  telephone: string;
+  ville: string;
+  pays: string;
+  bio: string;
+  avatar: string;
+}
+
 const ProfilPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('infos');
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -21,7 +38,7 @@ const ProfilPage = () => {
     newPassword: '',
     confirmPassword: '',
   });
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfileData>({
     prenom: '',
     nom: '',
     email: '',
@@ -29,19 +46,17 @@ const ProfilPage = () => {
     ville: '',
     pays: '',
     bio: '',
+    avatar: '',
   });
+  const [reservationCount, setReservationCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await usersApi.getProfile() as unknown as { user: {
-          firstName?: string;
-          lastName?: string;
-          email?: string;
-          phone?: string;
-          ville?: string;
-          pays?: string;
-          bio?: string;
+        const response = await usersApi.getProfile() as { user: {
+          firstName?: string; lastName?: string; email?: string; phone?: string;
+          ville?: string; pays?: string; bio?: string; avatar?: string;
         }};
         const user = response.user;
         setForm({
@@ -52,30 +67,71 @@ const ProfilPage = () => {
           ville: user.ville || '',
           pays: user.pays || '',
           bio: user.bio || '',
+          avatar: user.avatar || '',
         });
       } catch (err: unknown) {
-        const error = err as Error;
-        setError(error.message || 'Erreur lors du chargement du profil');
+        toast.error((err as Error).message || t('profil.erreur_chargement'));
       } finally {
         setLoading(false);
       }
     };
+
+    const fetchStats = async () => {
+      try {
+        const [reservations, reviews] = await Promise.all([
+          usersApi.getMyReservations(),
+          usersApi.getMyReviews(),
+        ]);
+        setReservationCount(reservations.length);
+        setReviewCount(reviews.length);
+      } catch { /* stats non critiques */ }
+    };
+
     fetchProfile();
-  }, []);
+    fetchStats();
+  }, [t]);
 
   const handleChange = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('Le fichier est trop volumineux (max 5 Mo)');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const result = await usersApi.uploadAvatar(formData);
+      setForm(prev => ({ ...prev, avatar: result.avatarUrl }));
+      toast.success('Photo de profil mise à jour !');
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'Erreur lors du téléversement');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async () => {
-    setError('');
+    setSaving(true);
     try {
       if (activeTab === 'securite') {
         if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-          setError('Les mots de passe ne correspondent pas');
+          toast.error(t('profil.mdp_different'));
           return;
         }
         if (passwordForm.newPassword.length < 8) {
-          setError('Le nouveau mot de passe doit contenir au moins 8 caractères');
+          toast.error(t('profil.mdp_court'));
           return;
         }
         await usersApi.updatePassword({
@@ -83,27 +139,40 @@ const ProfilPage = () => {
           newPassword: passwordForm.newPassword,
         });
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      } else {
+        toast.success('Mot de passe mis à jour !');
+      } else if (activeTab === 'infos') {
         await usersApi.updateProfile({
           firstName: form.prenom,
           lastName: form.nom,
           email: form.email,
           phone: form.telephone,
+          ville: form.ville,
+          pays: form.pays,
+          bio: form.bio,
         });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+        toast.success('Profil mis à jour !');
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
       }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
-      const error = err as Error;
-      setError(error.message || 'Erreur lors de la sauvegarde');
+      toast.error((err as Error).message || t('profil.erreur_sauvegarde'));
+    } finally {
+      setSaving(false);
     }
   };
+
+  const avatarSrc = form.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(form.prenom + ' ' + form.nom)}&background=c9a570&color=fff&size=120`;
 
   if (loading) {
     return (
       <VoyageurLayout>
         <div className={styles.inner}>
-          <p>Chargement du profil...</p>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem', color: 'var(--color-text-gray)' }}>
+            {t('profil.chargement')}
+          </div>
         </div>
       </VoyageurLayout>
     );
@@ -112,47 +181,60 @@ const ProfilPage = () => {
   return (
     <VoyageurLayout>
       <div className={styles.inner}>
-        {error && (
-          <div style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            padding: '12px',
-            borderRadius: '6px',
-            marginBottom: '16px',
-            fontSize: '0.875rem'
-          }}>
-            {error}
-          </div>
-        )}
-        <h1 className={styles.pageTitle}>Mon Profil</h1>
-        <p className={styles.pageSubtitle}>Gérez vos informations personnelles et vos préférences</p>
+        <h1 className={styles.pageTitle}>{t('profil.title')}</h1>
+        <p className={styles.pageSubtitle}>{t('profil.subtitle')}</p>
 
         <div className={styles.layout}>
           {/* Left: Avatar card */}
           <aside className={styles.avatarCard}>
             <div className={styles.avatarWrapper}>
               <img
-                src="https://i.pravatar.cc/120?u=amadou"
+                src={avatarSrc}
                 alt="Avatar"
                 className={styles.avatar}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(form.prenom)}&background=c9a570&color=fff`;
+                }}
               />
-              <button className={styles.avatarEdit} title="Changer la photo">
-                <Camera size={14} />
+              <button
+                className={styles.avatarEdit}
+                title={t('profil.changer_photo')}
+                onClick={handleAvatarClick}
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? (
+                  <span style={{ fontSize: '10px' }}>…</span>
+                ) : (
+                  <Camera size={14} />
+                )}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="user"
+                style={{ display: 'none' }}
+                onChange={handleAvatarChange}
+              />
             </div>
             <p className={styles.avatarName}>{form.prenom} {form.nom}</p>
             <p className={styles.avatarEmail}>{form.email}</p>
+            {(form.ville || form.pays) && (
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-gray)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <MapPin size={12} />
+                {[form.ville, form.pays].filter(Boolean).join(', ')}
+              </p>
+            )}
 
             <div className={styles.statsRow}>
               <div className={styles.statItem}>
-                <span className={styles.statNum}>5</span>
-                <span className={styles.statLbl}>Réservations</span>
+                <span className={styles.statNum}>{reservationCount}</span>
+                <span className={styles.statLbl}>{t('profil.reservations')}</span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
-                <span className={styles.statNum}>3</span>
-                <span className={styles.statLbl}>Avis laissés</span>
+                <span className={styles.statNum}>{reviewCount}</span>
+                <span className={styles.statLbl}>{t('profil.avis')}</span>
               </div>
             </div>
           </aside>
@@ -161,9 +243,9 @@ const ProfilPage = () => {
           <div className={styles.formSection}>
             <div className={styles.tabs}>
               {([
-                ['infos', 'Informations'],
-                ['securite', 'Sécurité'],
-                ['preferences', 'Préférences'],
+                ['infos', t('profil.infos')],
+                ['securite', t('profil.securite')],
+                ['preferences', t('profil.preferences')],
               ] as [TabType, string][]).map(([key, label]) => (
                 <button
                   key={key}
@@ -180,14 +262,14 @@ const ProfilPage = () => {
                 <>
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>Prénom</label>
+                      <label className={styles.label}>{t('profil.prenom')}</label>
                       <div className={styles.inputWrap}>
                         <User size={15} className={styles.inputIcon} />
                         <input className={styles.input} value={form.prenom} onChange={(e) => handleChange('prenom', e.target.value)} />
                       </div>
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.label}>Nom</label>
+                      <label className={styles.label}>{t('profil.nom')}</label>
                       <div className={styles.inputWrap}>
                         <User size={15} className={styles.inputIcon} />
                         <input className={styles.input} value={form.nom} onChange={(e) => handleChange('nom', e.target.value)} />
@@ -195,14 +277,14 @@ const ProfilPage = () => {
                     </div>
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Adresse e-mail</label>
+                    <label className={styles.label}>{t('profil.email')}</label>
                     <div className={styles.inputWrap}>
                       <Mail size={15} className={styles.inputIcon} />
                       <input className={styles.input} type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} />
                     </div>
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Téléphone</label>
+                    <label className={styles.label}>{t('profil.telephone')}</label>
                     <div className={styles.inputWrap}>
                       <Phone size={15} className={styles.inputIcon} />
                       <input className={styles.input} value={form.telephone} onChange={(e) => handleChange('telephone', e.target.value)} />
@@ -210,14 +292,14 @@ const ProfilPage = () => {
                   </div>
                   <div className={styles.row}>
                     <div className={styles.field}>
-                      <label className={styles.label}>Ville</label>
+                      <label className={styles.label}>{t('profil.ville')}</label>
                       <div className={styles.inputWrap}>
                         <MapPin size={15} className={styles.inputIcon} />
                         <input className={styles.input} value={form.ville} onChange={(e) => handleChange('ville', e.target.value)} />
                       </div>
                     </div>
                     <div className={styles.field}>
-                      <label className={styles.label}>Pays</label>
+                      <label className={styles.label}>{t('profil.pays')}</label>
                       <div className={styles.inputWrap}>
                         <MapPin size={15} className={styles.inputIcon} />
                         <input className={styles.input} value={form.pays} onChange={(e) => handleChange('pays', e.target.value)} />
@@ -225,85 +307,60 @@ const ProfilPage = () => {
                     </div>
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Biographie</label>
-                    <textarea className={styles.textarea} value={form.bio} onChange={(e) => handleChange('bio', e.target.value)} rows={3} />
+                    <label className={styles.label}>{t('profil.bio')}</label>
+                    <div className={styles.inputWrap} style={{ alignItems: 'flex-start' }}>
+                      <FileText size={15} className={styles.inputIcon} style={{ marginTop: '3px' }} />
+                      <textarea
+                        className={styles.textarea}
+                        value={form.bio}
+                        onChange={(e) => handleChange('bio', e.target.value)}
+                        rows={3}
+                        style={{ paddingLeft: 0 }}
+                      />
+                    </div>
                   </div>
                 </>
               )}
 
               {activeTab === 'securite' && (
                 <>
-                  <p className={styles.secHint}>Pour changer votre mot de passe, renseignez l'ancien puis le nouveau.</p>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Mot de passe actuel</label>
-                    <div className={styles.inputWrap}>
-                      <Lock size={15} className={styles.inputIcon} />
-                      <input 
-                        type={showPasswords.current ? 'text' : 'password'} 
-                        className={styles.input} 
-                        value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))}
-                        placeholder="••••••••"
-                      />
-                      <button 
-                        type="button"
-                        className={styles.eyeBtn}
-                        onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
-                      >
-                        {showPasswords.current ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
+                  <p className={styles.secHint}>{t('profil.hint_securite')}</p>
+                  {[
+                    { key: 'current', label: t('profil.mot_passe_actuel'), field: 'currentPassword' },
+                    { key: 'new', label: t('profil.nouveau_mot_passe'), field: 'newPassword' },
+                    { key: 'confirm', label: t('profil.confirmer_mot_passe'), field: 'confirmPassword' },
+                  ].map(({ key, label, field }) => (
+                    <div className={styles.field} key={key}>
+                      <label className={styles.label}>{label}</label>
+                      <div className={styles.inputWrap}>
+                        <Lock size={15} className={styles.inputIcon} />
+                        <input
+                          type={showPasswords[key as keyof typeof showPasswords] ? 'text' : 'password'}
+                          className={styles.input}
+                          value={passwordForm[field as keyof typeof passwordForm]}
+                          onChange={(e) => setPasswordForm(p => ({ ...p, [field]: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          className={styles.eyeBtn}
+                          onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key as keyof typeof p] }))}
+                        >
+                          {showPasswords[key as keyof typeof showPasswords] ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Nouveau mot de passe</label>
-                    <div className={styles.inputWrap}>
-                      <Lock size={15} className={styles.inputIcon} />
-                      <input 
-                        type={showPasswords.new ? 'text' : 'password'} 
-                        className={styles.input} 
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))}
-                        placeholder="••••••••"
-                      />
-                      <button 
-                        type="button"
-                        className={styles.eyeBtn}
-                        onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
-                      >
-                        {showPasswords.new ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Confirmer le mot de passe</label>
-                    <div className={styles.inputWrap}>
-                      <Lock size={15} className={styles.inputIcon} />
-                      <input 
-                        type={showPasswords.confirm ? 'text' : 'password'} 
-                        className={styles.input} 
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                        placeholder="••••••••"
-                      />
-                      <button 
-                        type="button"
-                        className={styles.eyeBtn}
-                        onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
-                      >
-                        {showPasswords.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </>
               )}
 
               {activeTab === 'preferences' && (
                 <div className={styles.prefList}>
                   {[
-                    { label: 'Recevoir les offres par e-mail', defaultOn: true },
-                    { label: 'Notifications de réservation', defaultOn: true },
-                    { label: 'Rappels de départ', defaultOn: false },
-                    { label: 'Newsletter mensuelle', defaultOn: false },
+                    { label: t('profil.recevoir_offres'), defaultOn: true },
+                    { label: t('profil.notif_reservation'), defaultOn: true },
+                    { label: t('profil.rappels_depart'), defaultOn: false },
+                    { label: t('profil.newsletter'), defaultOn: false },
                   ].map(({ label, defaultOn }) => (
                     <div key={label} className={styles.prefItem}>
                       <span className={styles.prefLabel}>{label}</span>
@@ -317,8 +374,8 @@ const ProfilPage = () => {
               )}
 
               <div className={styles.formActions}>
-                <button className={styles.saveBtn} onClick={handleSave}>
-                  {saved ? <><Check size={15} /> Enregistré !</> : 'Sauvegarder'}
+                <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                  {saved ? <><Check size={15} /> {t('profil.enregistre')}</> : saving ? 'Sauvegarde...' : t('profil.sauvegarder')}
                 </button>
               </div>
             </div>

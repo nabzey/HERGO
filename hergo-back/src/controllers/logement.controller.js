@@ -126,6 +126,17 @@ const manageEspaces = async (req, res) => {
   }
 };
 
+// Récupérer les logements de l'utilisateur connecté
+const getMyLogements = async (req, res) => {
+  try {
+    const logements = await logementService.getMyLogements(req.user.id);
+    res.status(200).json({ logements });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de vos logements:', error);
+    res.status(500).json({ message: 'Erreur interne du serveur' });
+  }
+};
+
 module.exports = {
   getAllLogements,
   getLogementById,
@@ -136,4 +147,5 @@ module.exports = {
   manageImages,
   manageEquipements,
   manageEspaces,
+  getMyLogements,
 };

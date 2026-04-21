@@ -16,6 +16,7 @@ export const ADMIN_LINKS = [
 
 const AdminDashboardPage = () => {
   const currentUsers = useMemo(() => usersMockApi.getAll(), []);
+  
   const roleCounts = useMemo(
     () => ({
       voyageurs: currentUsers.filter((user) => user.role === 'VOYAGEUR').length,
@@ -33,7 +34,10 @@ const AdminDashboardPage = () => {
   ];
 
   return (
-    <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+    <DashboardLayout 
+      links={ADMIN_LINKS} 
+      role="admin"
+    >
       <div className={dStyles.pageHeader}>
         <h1 className={dStyles.pageTitle}>Dashboard Admin</h1>
         <p className={dStyles.pageSubtitle}>Vue d'ensemble de la plateforme HERGO</p>
@@ -109,8 +113,11 @@ const AdminDashboardPage = () => {
             <tr><th>Utilisateur</th><th>Rôle</th><th>Date inscription</th><th>Statut</th></tr>
           </thead>
           <tbody>
-            {(currentUsers.length ? currentUsers : []).slice(0, 4).map((u) => (
-              <tr key={u.id}>
+            {(currentUsers.length ? currentUsers : [])
+              .filter(u => u.role !== 'ADMIN')
+              .slice(0, 4)
+              .map((u) => (
+              <tr key={u.id} style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/admin/utilisateurs'}>
                 <td>
                   <div className={dStyles.avatarRow}>
                     <img src={u.avatar || `https://i.pravatar.cc/40?u=${u.email}`} alt={`${u.firstName} ${u.lastName}`} className={dStyles.avatarSmall} />

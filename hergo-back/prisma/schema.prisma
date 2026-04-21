@@ -20,8 +20,13 @@ model User {
   status    Status   @default(ACTIF)
   phone     String?
   avatar    String?
+  ville     String?
+  pays      String?
+  bio       String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  resetOtp  String?
+  resetOtpExpires DateTime?
 
   // Relations
   voyages       Voyage[]
@@ -30,6 +35,7 @@ model User {
   reviews       Review[]
   notifications Notification[]
   reclamations  Reclamation[]
+  favoris       Favori[]
 
   @@map("User")
 }
@@ -89,6 +95,7 @@ model Logement {
   reservations Reservation[]
   reviews      Review[]
   reclamations Reclamation[]
+  favoris      Favori[]
 
   @@map("Logement")
 }
@@ -238,16 +245,17 @@ enum ReclamationStatus {
 
 // Modèle Payment
 model Payment {
-  id              Int           @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   idReservation   Int
   stripePaymentId String?
+  paymentMethod   String   @default("STRIPE") // STRIPE, WAVE, ORANGE_MONEY
   amount          Float
-  currency        String        @default("eur")
-  status          PaymentStatus @default(EN_ATTENTE)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  currency        String   @default("XOF")
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  // Relations
+  // Relation
   reservation Reservation @relation(fields: [idReservation], references: [id])
 
   @@map("Payment")
@@ -258,4 +266,19 @@ enum PaymentStatus {
   CONFIRME
   ECHOUE
   REMBOURSE
+}
+
+// Modèle Favori
+model Favori {
+  id         Int      @id @default(autoincrement())
+  idVoyageur Int
+  idLogement Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  voyageur User     @relation(fields: [idVoyageur], references: [id])
+  logement Logement @relation(fields: [idLogement], references: [id])
+
+  @@map("Favori")
 }

@@ -5,16 +5,19 @@ import {
 } from 'lucide-react';
 import VoyageurLayout from '../../components/VoyageurLayout';
 import { settingsApi, usersApi } from '../../core/api/api';
+import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../core/i18n';
 import styles from './SettingsPage.module.css';
 
 type TabType = 'notifications' | 'language' | 'theme' | 'security' | 'about';
 type ThemeMode = 'light' | 'dark' | 'auto';
 
 const SettingsPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('notifications');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -33,7 +36,6 @@ const SettingsPage = () => {
   const LANGUAGES = [
     { code: 'fr', name: 'Français' },
     { code: 'en', name: 'English' },
-    { code: 'es', name: 'Español' },
   ];
 
   useEffect(() => {
@@ -45,9 +47,8 @@ const SettingsPage = () => {
           ...response,
           theme: (response.theme as ThemeMode) || 'auto',
         }));
-      } catch (err) {
-        const typedError = err as Error;
-        setError(typedError.message || 'Impossible de charger les paramètres');
+      } catch {
+        // Paramètres par défaut utilisés si le serveur est indisponible
       } finally {
         setLoading(false);
       }
@@ -56,63 +57,58 @@ const SettingsPage = () => {
     fetchSettings();
   }, []);
 
+  // Apply theme in real-time
   useEffect(() => {
     const theme = settings.theme;
-
     if (theme === 'dark') {
-      document.documentElement.dataset.theme = 'dark';
+      document.documentElement.removeAttribute('data-theme');
     } else if (theme === 'light') {
       document.documentElement.dataset.theme = 'light';
     } else {
-      delete document.documentElement.dataset.theme;
+      // Auto: follow system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.dataset.theme = 'light';
+      }
     }
-
     localStorage.setItem('hergoTheme', theme);
+  }, [settings.theme]);
+
+  // Apply language in real-time
+  useEffect(() => {
+    i18n.changeLanguage(settings.language);
     localStorage.setItem('hergoLanguage', settings.language);
-  }, [settings.theme, settings.language]);
+  }, [settings.language]);
 
   const savePreferences = async () => {
-    setError('');
-    setSuccess('');
-
     try {
       await settingsApi.update(settings);
-      setSuccess('Paramètres enregistrés avec succès.');
+      toast.success(t('settings.succes'));
     } catch (err) {
-      const typedError = err as Error;
-      setError(typedError.message || 'Erreur lors de la sauvegarde des paramètres');
+      toast.error((err as Error).message || 'Erreur lors de la sauvegarde des paramètres');
     }
   };
 
   const savePassword = async () => {
-    setError('');
-    setSuccess('');
-
     if (passwordForm.newPassword.length < 8) {
-      setError('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+      toast.error('Le nouveau mot de passe doit contenir au moins 8 caractères.');
       return;
     }
-
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
+      toast.error('Les mots de passe ne correspondent pas.');
       return;
     }
-
     try {
       await usersApi.updatePassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setSuccess('Mot de passe mis à jour avec succès.');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Mot de passe mis à jour avec succès.');
     } catch (err) {
-      const typedError = err as Error;
-      setError(typedError.message || 'Erreur lors du changement du mot de passe');
+      toast.error((err as Error).message || 'Erreur lors du changement du mot de passe');
     }
   };
 
@@ -132,46 +128,30 @@ const SettingsPage = () => {
       <div className={styles.inner}>
         <div className={styles.header}>
           <Link to="/profil" className={styles.backLink}>
-            <ChevronLeft size={14} /> Retour à mon profil
+            <ChevronLeft size={14} /> {t('settings.retour')}
           </Link>
-          <h1 className={styles.title}>Paramètres</h1>
+          <h1 className={styles.title}>{t('settings.title')}</h1>
         </div>
-
-        {error && (
-          <div style={{ marginBottom: '1rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', padding: '12px', borderRadius: '10px' }}>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{ marginBottom: '1rem', color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '12px', borderRadius: '10px' }}>
-            {success}
-          </div>
-        )}
 
         <div className={styles.contentLayout}>
           <aside className={styles.sidebar}>
             <nav className={styles.nav}>
-              <button className={`${styles.navItem} ${activeTab === 'notifications' ? styles.navItemActive : ''}`} onClick={() => setActiveTab('notifications')}>
-                <Bell size={16} />
-                Notifications
-              </button>
-              <button className={`${styles.navItem} ${activeTab === 'language' ? styles.navItemActive : ''}`} onClick={() => setActiveTab('language')}>
-                <Globe size={16} />
-                Langue
-              </button>
-              <button className={`${styles.navItem} ${activeTab === 'theme' ? styles.navItemActive : ''}`} onClick={() => setActiveTab('theme')}>
-                <Moon size={16} />
-                Apparence
-              </button>
-              <button className={`${styles.navItem} ${activeTab === 'security' ? styles.navItemActive : ''}`} onClick={() => setActiveTab('security')}>
-                <Shield size={16} />
-                Sécurité
-              </button>
-              <button className={`${styles.navItem} ${activeTab === 'about' ? styles.navItemActive : ''}`} onClick={() => setActiveTab('about')}>
-                <HelpCircle size={16} />
-                À propos
-              </button>
+              {([
+                ['notifications', <Bell size={16} />, t('settings.notifications')],
+                ['language', <Globe size={16} />, t('settings.langue')],
+                ['theme', <Moon size={16} />, t('settings.apparence')],
+                ['security', <Shield size={16} />, t('settings.securite')],
+                ['about', <HelpCircle size={16} />, t('settings.a_propos')],
+              ] as [TabType, React.ReactNode, string][]).map(([key, icon, label]) => (
+                <button
+                  key={key}
+                  className={`${styles.navItem} ${activeTab === key ? styles.navItemActive : ''}`}
+                  onClick={() => setActiveTab(key)}
+                >
+                  {icon}
+                  {label}
+                </button>
+              ))}
             </nav>
           </aside>
 

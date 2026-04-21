@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { logementsApi, reservationsApi } from '../../core/api/api';
+import { logementsApi, reservationsApi, paymentsApi } from '../../core/api/api';
 import styles from './ReservationPage.module.css';
 
 interface Logement {
@@ -47,10 +47,7 @@ const ReservationPage = () => {
     parking: false,
     transfert: false,
   });
-
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wave' | 'orange'>(
-    'card'
-  );
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wave' | 'orange' | 'arrival'>('arrival');
 
   // Récupérer les dates depuis le state de la page précédente ou utiliser des dates par défaut
   const state = location.state as { dateArrivee?: string; dateDepart?: string; reservation?: any } | null;
@@ -103,21 +100,46 @@ const ReservationPage = () => {
     if (!logement) return;
     
     setError('');
+    setLoading(true);
     
     try {
       const nombrePersonnes = form.adultes + form.enfants;
-      const response = await reservationsApi.create({
+      const res = await reservationsApi.create({
         idLogement: logement.id,
         dateDebut: dateArrivee,
         dateFin: dateDepart,
         nombrePersonnes,
       }) as { id: number };
       
-      navigate(`/mes-reservations/${response.id}`);
+      const reservationId = res.id;
+
+      if (paymentMethod === 'card') {
+        // Stripe - On redirige vers une simulation de succès pour l'instant
+        // ou on pourrait appeler createIntent si Stripe était configuré
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        navigate(`/mes-reservations/${reservationId}`);
+      } else if (paymentMethod === 'arrival') {
+        // Ne pas appeler le paiement, la réservation reste EN_ATTENTE
+        navigate(`/mes-reservations/${reservationId}`);
+      } else {
+        // Wave ou Orange Money Simulation
+        const method = paymentMethod === 'wave' ? 'WAVE' : 'ORANGE_MONEY';
+        const phoneNumber = form.telephone || '770000000';
+        
+        await paymentsApi.simulateMobileMoney({
+          reservationId,
+          amount: total,
+          method,
+          phoneNumber
+        });
+        
+        navigate(`/mes-reservations/${reservationId}`);
+      }
     } catch (err: unknown) {
       const error = err as Error;
-      setError(error.message || 'Erreur lors de la création de la réservation');
+      setError(error.message || 'Erreur lors de la réservation');
     } finally {
+      setLoading(false);
     }
   };
 
@@ -334,19 +356,13 @@ const ReservationPage = () => {
                   <div className={styles.policyItem}>
                     <span className={`${styles.policyDot}`} />
                     <span className={styles.policyText}>
-                      <strong>Annulation gratuite</strong> jusqu'à 7 jours avant la date d'arrivée — remboursement intégral.
+                      <strong>Remboursement flexible :</strong> Le voyageur peut être remboursé intégralement s'il souhaite annuler sa réservation.
                     </span>
                   </div>
                   <div className={styles.policyItem}>
                     <span className={`${styles.policyDot} ${styles.policyDotGray}`} />
                     <span className={styles.policyText}>
-                      <strong>Annulation partielle</strong> entre 3 et 6 jours avant l'arrivée — remboursement à 50%.
-                    </span>
-                  </div>
-                  <div className={styles.policyItem}>
-                    <span className={`${styles.policyDot} ${styles.policyDotRed}`} />
-                    <span className={styles.policyText}>
-                      <strong>Non remboursable</strong> moins de 3 jours avant l'arrivée.
+                      <strong>Options de paiement :</strong> Vous avez la possibilité de payer un acompte, de régler la totalité au moment de la réservation, ou de payer directement à l'arrivée.
                     </span>
                   </div>
                 </div>
@@ -391,10 +407,23 @@ const ReservationPage = () => {
       }`}
       onClick={() => setPaymentMethod('orange')}
     >
-      <div className={styles.paymentIcon}></div>
+      <div className={styles.paymentIcon}>📱</div>
       <div className={styles.paymentInfo}>
         <h4 className={styles.paymentTitle}>Orange Money</h4>
         <p className={styles.paymentDesc}>Paiement via Orange Money</p>
+      </div>
+    </div>
+
+    <div
+      className={`${styles.paymentMethod} ${
+        paymentMethod === 'arrival' ? styles.paymentMethodActive : ''
+      }`}
+      onClick={() => setPaymentMethod('arrival')}
+    >
+      <div className={styles.paymentIcon}>🚪</div>
+      <div className={styles.paymentInfo}>
+        <h4 className={styles.paymentTitle}>Payer à l'arrivée</h4>
+        <p className={styles.paymentDesc}>Réservez maintenant et payez sur place</p>
       </div>
     </div>
   </div>
@@ -505,7 +534,7 @@ const ReservationPage = () => {
             <div className={styles.summaryCol}>
               <div className={styles.summaryCard}>
                 <img
-                  src={logement.images && logement.images.length > 0 ? logement.images[0] : '/placeholder.jpg'}
+                  src={logement.images && logement.images.length > 0 ? (typeof logement.images[0] === 'string' ? logement.images[0] : (logement.images[0] as any).url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=400') : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=400'}
                   alt={logement.titre}
                   className={styles.summaryImg}
                 />

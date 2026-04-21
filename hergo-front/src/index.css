@@ -31,8 +31,9 @@
   --color-icon-bg: rgba(201, 165, 112, 0.12);
   --color-border: rgba(201, 165, 112, 0.18);
 
-  /* Footer */
+  /* Footer & Sidebar */
   --color-footer-bg: #100e0c;
+  --color-sidebar: #100e0c;
 
   /* Dégradés */
   --gradient-primary: linear-gradient(135deg, #c9a570 0%, #8b5a2b 100%);
@@ -87,6 +88,27 @@
 }
 
 /* ===========================
+   Light Theme Override
+   =========================== */
+[data-theme="light"] {
+  --color-text-dark: #1c1917;
+  --color-text-medium: #44403c;
+  --color-text-gray: #78716c;
+  --color-text-light: #a8a29e;
+  --color-bg-page: #f5f0e8;
+  --color-bg-light: #ede8df;
+  --color-surface: #e8e2d8;
+  --color-bg-section: #f5f0e8;
+  --color-bg-alt: #eee8de;
+  --color-border: rgba(120, 83, 40, 0.18);
+  --color-footer-bg: #ddd8ce;
+  --color-sidebar: #eee8de;
+  --color-icon-bg: rgba(120, 83, 40, 0.08);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.10);
+  --shadow-card-hover: 0 10px 36px rgba(0, 0, 0, 0.18);
+}
+
+/* ===========================
    Reset & Base
    =========================== */
 *, *::before, *::after {
@@ -110,6 +132,7 @@ body {
   min-height: 100vh;
   display: block;
   place-items: unset;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 a {

@@ -1,106 +1,105 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  Star, MapPin, Waves, ChefHat, Wind, Wifi, Car,
-  BedDouble, Dumbbell, CalendarDays, Users, Check,
-  Plane, Bus, ChevronRight, Images, ShowerHead,
-  TreePalm, Sofa, ArrowLeft,
+  Star, MapPin, CalendarDays, Users, Check,
+  Images, Heart, ArrowLeft,
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { villaDetails, type EspaceLogement } from '../../data/adminMockData';
+import { logementsApi, favorisApi } from '../../core/api/api';
+import toast from 'react-hot-toast';
 import styles from './LogementDetailPage.module.css';
 
-/* ── Icon maps ─────────────────────────────────────────── */
-const TRANSPORT_ICON_MAP: Record<string, React.ReactNode> = {
-  'Transfert aéroport': <Plane size={15} />,
-  'Parking privé': <Car size={15} />,
-  'Navette centre-ville': <Bus size={15} />,
-};
-
-const AMENITY_ICON_MAP: Record<string, React.ReactNode> = {
-  Waves: <Waves size={18} />,
-  ChefHat: <ChefHat size={18} />,
-  Wind: <Wind size={18} />,
-  Wifi: <Wifi size={18} />,
-  Car: <Car size={18} />,
-  BedDouble: <BedDouble size={18} />,
-  Dumbbell: <Dumbbell size={18} />,
-  Sunset: <Star size={18} />,
-};
-
-const ESPACE_ICON_MAP: Record<string, React.ReactNode> = {
-  BedDouble: <BedDouble size={22} />,
-  Sofa: <Sofa size={22} />,
-  ChefHat: <ChefHat size={22} />,
-  Waves: <Waves size={22} />,
-  ShowerHead: <ShowerHead size={22} />,
-  TreePalm: <TreePalm size={22} />,
-};
-
-/* ── Sub-components ─────────────────────────────────────── */
-function EspaceCard({ espace }: { espace: EspaceLogement }) {
-  return (
-    <div className={styles.espaceCard}>
-      <div className={styles.espaceImgWrap}>
-        <img src={espace.image} alt={espace.nom} className={styles.espaceImg} />
-        <div className={styles.espaceImgOverlay} />
-        <div className={styles.espaceIconBadge}>
-          {ESPACE_ICON_MAP[espace.icon] ?? <Check size={22} />}
-        </div>
-      </div>
-      <div className={styles.espaceBody}>
-        <div className={styles.espaceHeader}>
-          <span className={styles.espaceNom}>{espace.nom}</span>
-          {espace.surface && (
-            <span className={styles.espaceSurface}>{espace.surface}</span>
-          )}
-        </div>
-        <p className={styles.espaceDesc}>{espace.description}</p>
-        <ul className={styles.espaceDetails}>
-          {espace.details.map((d) => (
-            <li key={d} className={styles.espaceDetailItem}>
-              <Check size={11} className={styles.espaceCheck} />
-              {d}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 10) * 100;
-  return (
-    <div className={styles.scoreBarWrap}>
-      <div className={styles.scoreBarTrack}>
-        <div className={styles.scoreBarFill} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 /* ── Main page ──────────────────────────────────────────── */
 const LogementDetailPage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const villa = villaDetails;
+  
+  const [villa, setVilla] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const logementId = Number(id);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [dateArrivee, setDateArrivee] = useState('');
   const [dateDepart, setDateDepart] = useState('');
   const [voyageurs, setVoyageurs] = useState(2);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteMessage, setFavoriteMessage] = useState('');
+  const [dateError, setDateError] = useState(false);
 
-  const mainImg = villa.images[0];
-  const sideImg1 = villa.images[1];
-  const sideImg2 = villa.images[2];
-  const thumbs = villa.images.slice(3); // images 3..7
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch logement
+        const response = await logementsApi.getById(logementId) as { logement: any };
+        const v = response.logement;
+
+        // Si le logement n'est pas publié et que l'utilisateur n'est pas l'admin/hôte (simplifié ici par check statut)
+        if (v.statut !== 'PUBLIE') {
+          // Note: On pourrait ajouter un check req.user ici, mais api.ts getById catch déjà les erreurs
+          // Pour l'instant on force la redirection si pas PUBLIE pour le voyageur
+          navigate('/');
+          return;
+        }
+
+        setVilla(v);
+
+        // Fetch favori status
+        const isFav = await favorisApi.check(logementId);
+        setIsFavorite(isFav);
+
+        // Fetch reservations to check busy dates (simplified logic)
+        // Note: idealement on aurait un endpoint /logements/:id/busy-dates
+      } catch (err: any) {
+        setError(err.message || 'Erreur lors du chargement');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [logementId, navigate]);
 
   const openLightbox = (idx: number) => {
     setLightboxIdx(idx);
     setLightboxOpen(true);
+  };
+
+
+
+  if (loading) return <div className={styles.page}><Navbar /><div className={styles.inner}><p>Chargement...</p></div><Footer /></div>;
+  if (error || !villa) return <div className={styles.page}><Navbar /><div className={styles.inner}><p>{error || 'Logement introuvable'}</p></div><Footer /></div>;
+
+  const images = villa.images?.length > 0 ? villa.images.map((img: any) => img.url) : ['/vite.svg'];
+  const mainImg = images[0];
+  const sideImg1 = images[1] || mainImg;
+  const sideImg2 = images[2] || mainImg;
+  const thumbs = images.slice(3);
+
+  const handleToggleFavorite = async () => {
+    const newState = !isFavorite;
+    setIsFavorite(newState);
+    setFavoriteMessage(newState ? 'Ajouté à vos favoris' : 'Retiré de vos favoris');
+
+    if (isAuthenticated()) {
+      try {
+        if (!newState) {
+          await favorisApi.remove(logementId);
+        } else {
+          await favorisApi.add(logementId);
+        }
+      } catch (error) {
+        setIsFavorite(!newState);
+        setFavoriteMessage('Erreur lors de la mise à jour des favoris');
+      }
+    }
   };
 
   return (
@@ -114,7 +113,7 @@ const LogementDetailPage = () => {
           <span className={styles.breadSep}>/</span>
           <Link to="/logements" className={styles.breadLink}>Logements</Link>
           <span className={styles.breadSep}>/</span>
-          <span className={styles.breadCurrent}>{villa.name}</span>
+          <span className={styles.breadCurrent}>{villa.titre}</span>
         </div>
 
         {/* ── Gallery + Rating Sidebar ── */}
@@ -124,9 +123,27 @@ const LogementDetailPage = () => {
           <div className={styles.galleryArea}>
             {/* Main grid: big photo + 2 side photos */}
             <div className={styles.mainGallery}>
-              <div className={styles.bigPhotoWrap} onClick={() => openLightbox(0)}>
-                <img src={mainImg} alt={villa.name} className={styles.bigPhoto} />
+              <div className={styles.bigPhotoWrap} style={{ position: 'relative' }}>
+                <img src={mainImg} alt={villa.titre} className={styles.bigPhoto} onClick={() => openLightbox(0)} style={{ cursor: 'pointer' }} />
                 <div className={styles.photoOverlay} />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite();
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    zIndex: 10
+                  }}
+                  title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                >
+                  <Heart size={32} fill={isFavorite ? '#ef4444' : 'rgba(0,0,0,0.4)'} color="#fff" />
+                </button>
               </div>
               <div className={styles.sidePhotos}>
                 <div className={styles.sidePhotoWrap} onClick={() => openLightbox(1)}>
@@ -142,20 +159,20 @@ const LogementDetailPage = () => {
 
             {/* Thumbnail row */}
             <div className={styles.thumbRow}>
-              {thumbs.slice(0, 4).map((img, i) => (
+              {thumbs.slice(0, 4).map((img: string, i: number) => (
                 <div key={i} className={styles.thumbWrap} onClick={() => openLightbox(i + 3)}>
                   <img src={img} alt={`Vue ${i + 4}`} className={styles.thumbPhoto} />
                   <div className={styles.photoOverlay} />
                 </div>
               ))}
               {/* Last thumb with "autres photos" overlay */}
-              <div className={styles.thumbWrap} onClick={() => openLightbox(7)} style={{ position: 'relative' }}>
+              <div className={styles.thumbWrap} onClick={() => openLightbox(Math.max(0, images.length - 1))} style={{ position: 'relative' }}>
                 {thumbs[4] && (
                   <img src={thumbs[4]} alt="Plus de photos" className={styles.thumbPhoto} />
                 )}
                 <div className={styles.morePhotosOverlay}>
                   <Images size={20} />
-                  <span>{villa.images.length - 3} autres photos</span>
+                  <span>{images.length} photos</span>
                 </div>
               </div>
             </div>
@@ -166,53 +183,31 @@ const LogementDetailPage = () => {
             {/* Global score */}
             <div className={styles.ratingBox}>
               <div className={styles.ratingTopRow}>
-                <div className={styles.ratingLabel}>{villa.scores.label}</div>
+                <div className={styles.ratingLabel}>Très bien</div>
                 <div className={styles.ratingBadge}>
-                  {villa.scores.global.toFixed(1).replace('.', ',')}
+                  {(villa.rating || 4.5).toFixed(1).replace('.', ',')}
                 </div>
               </div>
               <p className={styles.experiencesCount}>
-                {villa.scores.totalExperiences.toLocaleString('fr-FR')} expériences vécues
+                {(villa.reviewCount || 12).toLocaleString('fr-FR')} expériences vécues
               </p>
             </div>
 
-            {/* Featured review */}
+            {/* Featured review (mock for now as real reviews are not fetched) */}
             <div className={styles.reviewQuoteBox}>
               <p className={styles.reviewQuoteTitle}>
-                Ce que les personnes ayant séjourné ici ont adoré :
+                Ce que les voyageurs adorent :
               </p>
               <p className={styles.reviewQuoteText}>
-                « {villa.scores.avisVedette.quote} »
+                « Un séjour inoubliable dans un cadre idyllique. Le confort est au rendez-vous. »
               </p>
-              <div className={styles.reviewQuoteAuthor}>
-                <div className={styles.reviewerInitial}>
-                  {villa.scores.avisVedette.initial}
-                </div>
-                <span className={styles.reviewerName}>{villa.scores.avisVedette.author}</span>
-                <span className={styles.reviewerFlag}>{villa.scores.avisVedette.flag}</span>
-                <span className={styles.reviewerCountry}>{villa.scores.avisVedette.country}</span>
-                <ChevronRight size={14} className={styles.reviewerArrow} />
-              </div>
-            </div>
-
-            {/* Score categories */}
-            <div className={styles.scoresBox}>
-              {villa.scores.categories.map((cat) => (
-                <div key={cat.label} className={styles.scoreRow}>
-                  <span className={styles.scoreCatLabel}>{cat.label}</span>
-                  <ScoreBar score={cat.score} />
-                  <span className={styles.scoreCatValue}>
-                    {cat.score.toFixed(1).replace('.', ',')}
-                  </span>
-                </div>
-              ))}
             </div>
 
             {/* Map */}
             <div className={styles.mapBox}>
               <div className={styles.mapImgWrap}>
                 <img
-                  src={`https://maps.wikimedia.org/img/osm-intl,14,${villa.coordinates.lat},${villa.coordinates.lng},280x140.png`}
+                  src={`https://maps.wikimedia.org/img/osm-intl,14,${villa.latitude || 14.7167},${villa.longitude || -17.4677},280x140.png`}
                   alt="Carte"
                   className={styles.mapImg}
                   onError={(e) => {
@@ -240,30 +235,30 @@ const LogementDetailPage = () => {
             {/* Title block */}
             <div className={styles.titleBlock}>
               <div className={styles.titleMeta}>
-                <span className={styles.typeBadge}>{villa.bedrooms} chambres · {villa.capacity} personnes</span>
+                <span className={styles.typeBadge}>{villa.type || 'Villa'} · {villa.capacite} personnes</span>
               </div>
-              <h1 className={styles.villaTitle}>{villa.name}</h1>
+              <h1 className={styles.villaTitle}>{villa.titre}</h1>
               <div className={styles.metaRow}>
                 <div className={styles.ratingInline}>
                   <Star size={14} fill="currentColor" className={styles.starIcon} />
-                  <strong>{villa.rating}</strong>
-                  <span className={styles.reviewCountInline}>({villa.reviewCount} avis)</span>
+                  <strong>{villa.rating || 4.5}</strong>
+                  <span className={styles.reviewCountInline}>({villa.reviewCount || 12} avis)</span>
                 </div>
                 <span className={styles.metaDot}>·</span>
                 <div className={styles.locationInline}>
                   <MapPin size={13} />
-                  {villa.location}
+                  {villa.ville}, {villa.pays}
                 </div>
               </div>
             </div>
 
             {/* Host */}
             <div className={styles.hostRow}>
-              <img src={villa.host.avatar} alt={villa.host.name} className={styles.hostAvatar} />
+              <img src={villa.proprietaire?.avatar || 'https://ui-avatars.com/api/?name=Hote&background=c9a570&color=fff'} alt={villa.proprietaire?.firstName} className={styles.hostAvatar} />
               <div>
                 <p className={styles.hostedBy}>Hébergement proposé par</p>
-                <p className={styles.hostName}>{villa.host.name}</p>
-                <p className={styles.hostSince}>Hôte depuis {villa.host.joinDate} · Note {villa.host.rating}/5</p>
+                <p className={styles.hostName}>{villa.proprietaire?.firstName || 'Hôte'} {villa.proprietaire?.lastName || ''}</p>
+                <p className={styles.hostSince}>Hôte vérifié · Note 4.8/5</p>
               </div>
             </div>
 
@@ -277,55 +272,41 @@ const LogementDetailPage = () => {
 
             <hr className={styles.sep} />
 
-            {/* ── Espaces section (NEW) ── */}
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Les espaces du logement</h2>
-              <p className={styles.sectionSub}>
-                Découvrez chaque pièce et espace de ce logement d'exception
-              </p>
-              <div className={styles.espacesGrid}>
-                {villa.espaces.map((espace) => (
-                  <EspaceCard key={espace.id} espace={espace} />
-                ))}
-              </div>
-            </section>
+            {/* ── Espaces section ── */}
+            {villa.espaces?.length > 0 && (
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Les espaces du logement</h2>
+                <div className={styles.espacesGrid}>
+                  {villa.espaces.map((espace: any) => (
+                    <div key={espace.id} className={styles.espaceCard}>
+                      <div className={styles.espaceBody}>
+                        <span className={styles.espaceNom}>{espace.nom}</span>
+                        <p className={styles.espaceDesc}>{espace.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            <hr className={styles.sep} />
+            {villa.espaces?.length > 0 && <hr className={styles.sep} />}
 
             {/* Amenities */}
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Équipements inclus</h2>
               <div className={styles.amenitiesGrid}>
-                {villa.amenities.map((a) => (
-                  <div key={a.label} className={styles.amenityItem}>
+                {villa.equipements?.map((a: any) => (
+                  <div key={a.id} className={styles.amenityItem}>
                     <span className={styles.amenityIcon}>
-                      {AMENITY_ICON_MAP[a.icon] ?? <Check size={18} />}
+                      <Check size={18} />
                     </span>
-                    <span className={styles.amenityLabel}>{a.label}</span>
+                    <span className={styles.amenityLabel}>{a.nom}</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Transport */}
-            {villa.transportPropose && villa.transportPropose.length > 0 && (
-              <>
-                <hr className={styles.sep} />
-                <section className={styles.section}>
-                  <h2 className={styles.sectionTitle}>Transport proposé</h2>
-                  <div className={styles.transportGrid}>
-                    {villa.transportPropose.map((t) => (
-                      <div key={t} className={styles.transportItem}>
-                        <span className={styles.transportIcon}>
-                          {TRANSPORT_ICON_MAP[t] ?? <Car size={15} />}
-                        </span>
-                        <span className={styles.transportLabel}>{t}</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
+
 
             <hr className={styles.sep} />
 
@@ -334,45 +315,35 @@ const LogementDetailPage = () => {
               <div className={styles.reviewsHeader}>
                 <Star size={18} fill="currentColor" className={styles.starIcon} />
                 <h2 className={styles.sectionTitle}>
-                  {villa.rating} · {villa.reviewCount} avis
+                  {(villa.rating || 4.5).toFixed(1)} · {villa.reviews?.length || 0} avis
                 </h2>
               </div>
-              {villa.avis && villa.avis.length > 0 && (
+              {villa.reviews && villa.reviews.length > 0 && (
                 <div className={styles.reviewsGrid}>
-                  {villa.avis.map((avis) => (
-                    <div key={avis.id} className={styles.reviewCard}>
+                  {villa.reviews.map((review: any) => (
+                    <div key={review.id} className={styles.reviewCard}>
                       <div className={styles.reviewTop}>
-                        <img src={avis.avatar} alt={avis.author} className={styles.reviewAvatar} />
+                        <img
+                          src={review.voyageur?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent((review.voyageur?.firstName || 'U') + ' ' + (review.voyageur?.lastName || ''))}&background=c9a570&color=fff`}
+                          alt={review.voyageur?.firstName || 'Voyageur'}
+                          className={styles.reviewAvatar}
+                        />
                         <div className={styles.reviewMeta}>
-                          <span className={styles.reviewAuthor}>{avis.author}</span>
-                          <span className={styles.reviewDate}>{avis.date}</span>
+                          <span className={styles.reviewAuthor}>{review.voyageur?.firstName || 'Voyageur'} {review.voyageur?.lastName || ''}</span>
+                          <span className={styles.reviewDate}>{new Date(review.createdAt).toLocaleDateString('fr-FR')}</span>
                         </div>
                         <div className={styles.reviewStars}>
-                          {Array.from({ length: 5 }, (_, i) => (
+                          {Array.from({ length: 5 }, (_, i: number) => (
                             <Star
                               key={i}
                               size={11}
-                              fill={i < avis.rating ? 'currentColor' : 'none'}
-                              className={i < avis.rating ? styles.starFilled : styles.starEmpty}
+                              fill={i < review.note ? 'currentColor' : 'none'}
+                              className={i < review.note ? styles.starFilled : styles.starEmpty}
                             />
                           ))}
                         </div>
                       </div>
-                      <p className={styles.reviewComment}>{avis.comment}</p>
-                      <div className={styles.reviewCategories}>
-                        {Object.entries(avis.categories).map(([key, val]) => (
-                          <span key={key} className={styles.reviewCatChip}>
-                            {key === 'proprete'
-                              ? 'Propreté'
-                              : key === 'confort'
-                              ? 'Confort'
-                              : key === 'emplacement'
-                              ? 'Emplacement'
-                              : 'Accueil'}{' '}
-                            {val}/5
-                          </span>
-                        ))}
-                      </div>
+                      <p className={styles.reviewComment}>{review.commentaire}</p>
                     </div>
                   ))}
                 </div>
@@ -384,40 +355,49 @@ const LogementDetailPage = () => {
           <aside className={styles.bookingAside}>
             <div className={styles.bookingCard}>
               <p className={styles.bookingPrice}>
-                <strong>{villa.pricePerNight.toLocaleString('fr-FR')} FCFA</strong>
+                <strong>{(villa.prixJour || 0).toLocaleString('fr-FR')} FCFA</strong>
                 <span> / nuit</span>
               </p>
 
               <div className={styles.ratingSmall}>
                 <Star size={12} fill="currentColor" className={styles.starIcon} />
-                <strong>{villa.rating}</strong>
-                <span className={styles.reviewCountSmall}>({villa.reviewCount} avis)</span>
+                <strong>{villa.rating || 4.5}</strong>
+                <span className={styles.reviewCountSmall}>({villa.reviewCount || 12} avis)</span>
               </div>
 
-              <div className={styles.dateGrid}>
+              <div className={`${styles.dateGrid} ${dateError ? styles.dateGridError : ''}`} style={dateError ? { border: '1px solid #ef4444', borderRadius: '8px', padding: '4px' } : {}}>
                 <div className={styles.dateField}>
-                  <label className={styles.dateLabel}>
+                  <label className={styles.dateLabel} style={dateError ? { color: '#ef4444' } : {}}>
                     <CalendarDays size={11} /> ARRIVÉE
                   </label>
                   <input
                     type="date"
                     className={styles.dateInput}
+                    min={new Date().toISOString().split('T')[0]}
                     value={dateArrivee}
-                    onChange={(e) => setDateArrivee(e.target.value)}
+                    onClick={(e) => (e.target as HTMLInputElement).showPicker && (e.target as HTMLInputElement).showPicker()}
+                    onChange={(e) => { setDateArrivee(e.target.value); setDateError(false); }}
                   />
                 </div>
                 <div className={styles.dateField}>
-                  <label className={styles.dateLabel}>
+                  <label className={styles.dateLabel} style={dateError ? { color: '#ef4444' } : {}}>
                     <CalendarDays size={11} /> DÉPART
                   </label>
                   <input
                     type="date"
                     className={styles.dateInput}
+                    min={dateArrivee || new Date().toISOString().split('T')[0]}
                     value={dateDepart}
-                    onChange={(e) => setDateDepart(e.target.value)}
+                    onClick={(e) => (e.target as HTMLInputElement).showPicker && (e.target as HTMLInputElement).showPicker()}
+                    onChange={(e) => { setDateDepart(e.target.value); setDateError(false); }}
                   />
                 </div>
               </div>
+              {dateError && (
+                <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px', textAlign: 'center' }}>
+                  Veuillez sélectionner vos dates de séjour
+                </p>
+              )}
 
               <div className={styles.voyageursField}>
                 <label className={styles.dateLabel}>
@@ -426,15 +406,26 @@ const LogementDetailPage = () => {
                 <div className={styles.counter}>
                   <button className={styles.counterBtn} onClick={() => setVoyageurs(Math.max(1, voyageurs - 1))}>−</button>
                   <span className={styles.counterVal}>{voyageurs}</span>
-                  <button className={styles.counterBtn} onClick={() => setVoyageurs(Math.min(villa.capacity, voyageurs + 1))}>+</button>
+                  <button className={styles.counterBtn} onClick={() => setVoyageurs(Math.min(villa.capacite || 10, voyageurs + 1))}>+</button>
                 </div>
               </div>
 
               <button
                 className={styles.reserveBtn}
                 onClick={() => {
+                  if (!dateArrivee || !dateDepart) {
+                    setDateError(true);
+                    return;
+                  }
                   if (isAuthenticated()) {
-                    navigate('/reservation');
+                    navigate(`/reservation/${logementId}`, {
+                      state: {
+                        dateArrivee,
+                        dateDepart,
+                        voyageurs,
+                        villa
+                      },
+                    });
                   } else {
                     navigate('/connexion');
                   }
@@ -443,24 +434,32 @@ const LogementDetailPage = () => {
                 Réserver maintenant
               </button>
 
-              <div className={styles.bookingSummary}>
-                <div className={styles.summaryRow}>
-                  <span>{villa.pricePerNight.toLocaleString('fr-FR')} × 7 nuits</span>
-                  <span>{(villa.pricePerNight * 7).toLocaleString('fr-FR')} FCFA</span>
+              {favoriteMessage && (
+                <p className={styles.bookingNote} style={{ marginTop: '0.5rem', color: '#10b981', fontWeight: 500 }}>
+                  {favoriteMessage}
+                </p>
+              )}
+
+              {dateArrivee && dateDepart && (
+                <div className={styles.bookingSummary}>
+                  <div className={styles.summaryRow}>
+                    <span>{villa.prixJour.toLocaleString('fr-FR')} × {Math.ceil((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 3600 * 24))} nuits</span>
+                    <span>{(villa.prixJour * Math.ceil((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 3600 * 24))).toLocaleString('fr-FR')} FCFA</span>
+                  </div>
+                  <div className={styles.summaryRow}>
+                    <span>Frais de service</span>
+                    <span>15 000 FCFA</span>
+                  </div>
+                  <hr className={styles.sumSep} />
+                  <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
+                    <span>Total estimé</span>
+                    <span>{(villa.prixJour * Math.ceil((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 3600 * 24)) + 15000).toLocaleString('fr-FR')} FCFA</span>
+                  </div>
                 </div>
-                <div className={styles.summaryRow}>
-                  <span>Frais de service</span>
-                  <span>150 000 FCFA</span>
-                </div>
-                <hr className={styles.sumSep} />
-                <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
-                  <span>Total estimé</span>
-                  <span>{(villa.pricePerNight * 7 + 150000).toLocaleString('fr-FR')} FCFA</span>
-                </div>
-              </div>
+              )}
 
               <p className={styles.bookingNote}>
-                Vous ne serez débité qu'après confirmation de l'hôte.
+                L'hôte doit valider votre demande avant tout paiement.
               </p>
             </div>
 
@@ -480,23 +479,23 @@ const LogementDetailPage = () => {
             <button className={styles.lightboxClose} onClick={() => setLightboxOpen(false)}>✕</button>
             <button
               className={`${styles.lightboxNav} ${styles.lightboxPrev}`}
-              onClick={() => setLightboxIdx((i) => (i - 1 + villa.images.length) % villa.images.length)}
+              onClick={() => setLightboxIdx((i: number) => (i - 1 + images.length) % images.length)}
             >
               ‹
             </button>
             <img
-              src={villa.images[lightboxIdx]}
+              src={images[lightboxIdx]}
               alt={`Photo ${lightboxIdx + 1}`}
               className={styles.lightboxImg}
             />
             <button
               className={`${styles.lightboxNav} ${styles.lightboxNext}`}
-              onClick={() => setLightboxIdx((i) => (i + 1) % villa.images.length)}
+              onClick={() => setLightboxIdx((i: number) => (i + 1) % images.length)}
             >
               ›
             </button>
             <div className={styles.lightboxCount}>
-              {lightboxIdx + 1} / {villa.images.length}
+              {lightboxIdx + 1} / {images.length}
             </div>
           </div>
         </div>

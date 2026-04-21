@@ -7,4 +7,107 @@
 .filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .filterBtn { padding: 0.4rem 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-gray); background: transparent; cursor: pointer; font-family: var(--font-family); transition: all var(--transition-fast); }
 .filterBtn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.filterBtnActive {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* User Detail Modal Styles */
+.userDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detailAvatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primary-light);
+}
+
+.detailName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+}
+
+.detailEmail {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 0.5rem 0;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.detailValue {
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.detailActions {
+  margin-top: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btnSuspend {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.btnSuspend:hover {
+  background-color: #fecaca;
+}
+
+.btnReactivate {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+
+.btnReactivate:hover {
+  background-color: #dcfce7;
+}
 .filterBtnActive { border-color: var(--color-primary); background: rgba(201,165,112,0.1); color: var(--color-primary); font-weight: 700; }

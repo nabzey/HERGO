@@ -56,9 +56,21 @@ const getPaymentAmount = async (req, res) => {
   }
 };
 
+const simulateMobileMoney = async (req, res) => {
+  try {
+    const { reservationId, amount, method, phoneNumber } = req.body;
+    const result = await paymentService.simulateMobileMoney(reservationId, amount, method, phoneNumber);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Erreur lors de la simulation du paiement:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllPayments,
   getPaymentById,
   createPaymentIntent,
   getPaymentAmount,
+  simulateMobileMoney,
 };

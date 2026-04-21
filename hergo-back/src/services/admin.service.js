@@ -36,13 +36,13 @@ const adminService = {
       `);
 
       return {
-        userCount: userCount[0].count,
-        logementCount: logementCount[0].count,
-        reservationCount: reservationCount[0].count,
-        pendingLogementCount: pendingLogementCount[0].count,
-        monthlyReservations,
-        monthlyRevenues,
-        userByRole
+        userCount: Number(userCount[0].count),
+        logementCount: Number(logementCount[0].count),
+        reservationCount: Number(reservationCount[0].count),
+        pendingLogementCount: Number(pendingLogementCount[0].count),
+        monthlyReservations: monthlyReservations.map(r => ({ ...r, count: Number(r.count) })),
+        monthlyRevenues: monthlyRevenues.map(r => ({ ...r, total: Number(r.total) })),
+        userByRole: userByRole.map(r => ({ ...r, count: Number(r.count) }))
       };
     } catch (error) {
       throw error;

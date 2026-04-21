@@ -177,9 +177,9 @@ const authService = {
   },
 
   // Récupérer les informations de l'utilisateur connecté
-  getCurrentUser: async (userId) => {
+  getCurrentUser: async (id) => {
     try {
-      const user = await UserRepository.findById(userId);
+      const user = await UserRepository.findById(id);
 
       if (!user) {
         throw new NotFoundError('Utilisateur non trouvé');
@@ -200,6 +200,59 @@ const authService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // Mot de passe oublié
+  forgotPassword: async (email) => {
+    const user = await UserRepository.findByEmail(email.trim().toLowerCase());
+    if (!user) {
+      // Pour des raisons de sécurité, on ne dit pas si l'email existe ou non
+      return { message: 'Si cet email correspond à un compte, un code a été envoyé.' };
+    }
+
+    // Générer un code OTP de 6 chiffres
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await UserRepository.update(user.id, {
+      resetOtp: otp,
+      resetOtpExpires: expires,
+    });
+
+    await emailHelper.sendOtpEmail(user.email, user.firstName, otp);
+
+    return { message: 'Code OTP envoyé.' };
+  },
+
+  // Vérifier OTP
+  verifyOtp: async (email, otp) => {
+    const user = await UserRepository.findByEmail(email.trim().toLowerCase());
+    if (!user || user.resetOtp !== otp || new Date() > user.resetOtpExpires) {
+      throw new AuthenticationError('Code OTP invalide ou expiré');
+    }
+    return { success: true };
+  },
+
+  // Réinitialiser le mot de passe
+  resetPassword: async (email, otp, newPassword) => {
+    const user = await UserRepository.findByEmail(email.trim().toLowerCase());
+    if (!user || user.resetOtp !== otp || new Date() > user.resetOtpExpires) {
+      throw new AuthenticationError('Code OTP invalide ou expiré');
+    }
+
+    if (!passwordHelper.isPasswordStrong(newPassword)) {
+      throw new AuthenticationError('Mot de passe trop faible: minimum 8 caractères');
+    }
+
+    const hashedPassword = await passwordHelper.hashPassword(newPassword);
+
+    await UserRepository.update(user.id, {
+      password: hashedPassword,
+      resetOtp: null,
+      resetOtpExpires: null,
+    });
+
+    return { message: 'Mot de passe réinitialisé avec succès.' };
   },
 };
 

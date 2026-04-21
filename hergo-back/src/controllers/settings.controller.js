@@ -10,19 +10,13 @@ const DEFAULT_SETTINGS = {
   theme: 'auto',
 };
 
-const ensureThemeColumn = async () => {
-  try {
-    await pool.execute("ALTER TABLE UserSettings ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT 'auto'");
-  } catch (error) {
-    console.warn("Colonne theme indisponible sur UserSettings:", error.message);
-  }
-};
+
 
 const getSettings = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    await ensureThemeColumn();
+
 
     const [settings] = await pool.execute('SELECT * FROM UserSettings WHERE userId = ?', [userId]);
 
@@ -69,7 +63,7 @@ const updateSettings = async (req, res) => {
       theme,
     } = req.body;
 
-    await ensureThemeColumn();
+
 
     const [existingSettings] = await pool.execute('SELECT * FROM UserSettings WHERE userId = ?', [userId]);
 

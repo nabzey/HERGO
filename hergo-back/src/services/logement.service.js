@@ -20,7 +20,8 @@ const ensureAccess = (logement, userId, userRole) => {
 const logementService = {
   getAllLogements: async (filters = {}) => {
     try {
-      const { ville, pays, prixMin, prixMax, capacite, statut = 'PUBLIE' } = filters;
+      const { ville, pays, prixMin, prixMax, capacite } = filters;
+      const statut = 'PUBLIE';
 
       let query = 'SELECT * FROM Logement WHERE statut = ?';
       const params = [statut];
@@ -94,7 +95,7 @@ const logementService = {
         pays,
         longitude,
         latitude,
-        statut = 'BROUILLON',
+        statut = 'EN_ATTENTE',
       } = data;
 
       const [result] = await pool.execute(
@@ -258,6 +259,26 @@ const logementService = {
 
       const [images] = await pool.execute('SELECT * FROM Image WHERE id = ?', [insertResult.insertId]);
       return images[0];
+    } catch (error) {
+      throw error;
+    }
+  },
+  getMyLogements: async (userId) => {
+    try {
+      const [logements] = await pool.execute(
+        'SELECT * FROM Logement WHERE idProprietaire = ? ORDER BY createdAt DESC',
+        [userId]
+      );
+      
+      const logementsWithImages = await Promise.all(logements.map(async (l) => {
+        const [images] = await pool.execute(
+          'SELECT url FROM Image WHERE idLogement = ? LIMIT 1',
+          [l.id]
+        );
+        return { ...l, image: images[0] ? images[0].url : null };
+      }));
+
+      return logementsWithImages;
     } catch (error) {
       throw error;
     }

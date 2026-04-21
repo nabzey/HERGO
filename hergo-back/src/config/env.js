@@ -10,7 +10,7 @@ const env = {
   JWT_SECRET: process.env.JWT_SECRET || 'default_secret_key',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173,http://localhost:4173',
-  FRONTEND_URL: process.env.FRONTEND_URL || process.env.CORS_ORIGIN?.split(',')[0]?.trim() || 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL || (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0].trim() : 'http://localhost:5173'),
   RENDER_URL: process.env.RENDER_URL || '',
   LOCAL_NETWORK_URL: process.env.LOCAL_NETWORK_URL || '',
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,

@@ -28,20 +28,20 @@ interface ApiLogement {
   reviews?: unknown[];
 }
 
-const mapLogement = (logement: ApiLogement): Logement => ({
+const mapLogement = (logement: any): Logement => ({
   id: logement.id,
   name: logement.titre,
   location: [logement.ville, logement.pays].filter(Boolean).join(', '),
   price: `${Number(logement.prixJour || 0).toLocaleString('fr-FR')} FCFA`,
   reservations: 0,
-  rating: logement.reviews?.length || 0,
+  rating: 0,
   status:
     logement.statut === 'PUBLIE'
       ? 'publié'
       : logement.statut === 'BROUILLON'
         ? 'brouillon'
         : 'en attente',
-  image: logement.images?.[0]?.url || '/vite.svg',
+  image: logement.image || '/vite.svg',
 });
 
 const HOTE_LINKS = [
@@ -59,7 +59,7 @@ const MesLogementsPage = () => {
   useEffect(() => {
     const fetchLogements = async () => {
       try {
-        const data = await logementsApi.getAll() as ApiLogement[];
+        const data = await logementsApi.getMyLogements();
         setLogements(data.map(mapLogement));
       } catch (err: unknown) {
         const error = err as Error;
@@ -98,7 +98,7 @@ const MesLogementsPage = () => {
         <div className={styles.headerRow}>
           <div>
             <h1 className={dStyles.pageTitle}>Mes Logements</h1>
-            <p className={dStyles.pageSubtitle}>{logements.length} logements publiés</p>
+            <p className={dStyles.pageSubtitle}>{logements.length} logements enregistrés</p>
           </div>
           <Link to="/hote/ajouter" className={styles.addBtn}><Plus size={15} /> Ajouter</Link>
         </div>
@@ -145,7 +145,13 @@ const MesLogementsPage = () => {
               <td>{v.reservations}</td>
               <td>{v.rating > 0 ? `★ ${v.rating}` : '—'}</td>
               <td>
-                <span className={`${dStyles.badge} ${v.status === 'publié' ? dStyles.badgeGreen : v.status === 'brouillon' ? dStyles.badgeGray : dStyles.badgeRed}`}>{v.status}</span>
+                <span className={`${dStyles.badge} ${
+                  v.status === 'publié' ? dStyles.badgeGreen : 
+                  v.status === 'en attente' ? dStyles.badgeYellow : 
+                  dStyles.badgeGray
+                }`}>
+                  {v.status}
+                </span>
               </td>
               <td>
                 <div className={dStyles.actionGroup}>

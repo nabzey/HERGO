@@ -11,25 +11,27 @@ import {
   Settings,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import styles from './VoyageurLayout.module.css';
 
 interface VoyageurLayoutProps {
   children: React.ReactNode;
 }
 
-const links = [
-  { label: 'Dashboard', href: '/dashboard', icon: <Home size={18} /> },
-  { label: 'Logements', href: '/logements', icon: <MapPin size={18} /> },
-  { label: 'Réservations', href: '/mes-reservations', icon: <CalendarDays size={18} /> },
-  { label: 'Favoris', href: '/favoris', icon: <Heart size={18} /> },
-  { label: 'Notifications', href: '/notifications', icon: <Bell size={18} /> },
-  { label: 'Profil', href: '/profil', icon: <User size={18} /> },
-  { label: 'Paramètres', href: '/parametres', icon: <Settings size={18} /> },
-];
-
 const VoyageurLayout = ({ children }: VoyageurLayoutProps) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { t } = useTranslation();
+
+  const links = [
+    { label: t('nav.dashboard'), href: '/dashboard', icon: <Home size={18} /> },
+    { label: t('nav.logements'), href: '/logements', icon: <MapPin size={18} /> },
+    { label: t('nav.reservations'), href: '/mes-reservations', icon: <CalendarDays size={18} /> },
+    { label: t('nav.favoris'), href: '/favoris', icon: <Heart size={18} /> },
+    { label: t('nav.notifications'), href: '/notifications', icon: <Bell size={18} /> },
+    { label: t('nav.profil'), href: '/profil', icon: <User size={18} /> },
+    { label: t('nav.parametres'), href: '/parametres', icon: <Settings size={18} /> },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -48,7 +50,7 @@ const VoyageurLayout = ({ children }: VoyageurLayoutProps) => {
             </div>
             <div>
               <span className={styles.brandName}>HERGO</span>
-              <span className={styles.roleBadge}>Espace Voyageur</span>
+              <span className={styles.roleBadge}>{t('nav.espace_voyageur')}</span>
             </div>
           </div>
 
@@ -73,13 +75,13 @@ const VoyageurLayout = ({ children }: VoyageurLayoutProps) => {
             <div className={styles.userAvatar}>{userName.charAt(0).toUpperCase()}</div>
             <div className={styles.userInfo}>
               <span className={styles.userName}>{userName}</span>
-              <span className={styles.userRole}>Voyageur</span>
+              <span className={styles.userRole}>{t('nav.voyageur')}</span>
             </div>
           </div>
 
-          <button onClick={handleLogout} className={styles.logoutBtn} title="Déconnexion">
+          <button onClick={handleLogout} className={styles.logoutBtn} title={t('nav.deconnexion')}>
             <LogOut size={16} />
-            <span>Déconnexion</span>
+            <span>{t('nav.deconnexion')}</span>
           </button>
         </div>
       </aside>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, Bell, Star, Settings, Heart, ChevronRight, MapPin, Sparkles } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { notificationsApi, reservationsApi } from '../../core/api/api';
+import { notificationsApi, reservationsApi, favorisApi } from '../../core/api/api';
 import VoyageurLayout from '../../components/VoyageurLayout';
 import styles from './VoyageurDashboardPage.module.css';
 import heroImageOne from '../../assets/im1.jpeg';
@@ -23,6 +23,7 @@ const VoyageurDashboardPage = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [reservationsCount, setReservationsCount] = useState(0);
+  const [favorisCount, setFavorisCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,13 +34,15 @@ const VoyageurDashboardPage = () => {
           setCurrentUser(userData);
         }
 
-        const [notifications, reservations] = await Promise.all([
+        const [notifications, reservations, favoris] = await Promise.all([
           notificationsApi.getAll().catch(() => []),
           reservationsApi.getAll().catch(() => []),
+          favorisApi.getAll().catch(() => []),
         ]);
 
         setNotificationsCount((notifications as []).filter((n: any) => !n.lu).length);
         setReservationsCount((reservations as []).filter((r: any) => r.statut !== 'TERMINE' && r.statut !== 'ANNULE').length);
+        setFavorisCount((favoris as []).length);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -126,7 +129,7 @@ const VoyageurDashboardPage = () => {
           <Link to="/favoris" className={styles.statCard}>
             <div className={styles.statIcon}><Heart size={24} /></div>
             <div className={styles.statInfo}>
-              <span className={styles.statValue}>-</span>
+              <span className={styles.statValue}>{favorisCount}</span>
               <span className={styles.statLabel}>Favoris</span>
             </div>
           </Link>

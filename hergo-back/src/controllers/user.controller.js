@@ -25,7 +25,7 @@ const normalizePhone = ({ phone, phoneCountryCode, phoneNationalNumber }) => {
 const getMyProfile = async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, firstName, lastName, email, role, status, phone, avatar, createdAt, updatedAt FROM User WHERE id = ?',
+      'SELECT id, firstName, lastName, email, role, status, phone, avatar, ville, pays, bio, createdAt, updatedAt FROM User WHERE id = ?',
       [req.user.id]
     );
 
@@ -43,6 +43,9 @@ const updateUser = async (req, res) => {
     const email = req.body.email?.trim().toLowerCase();
     const phone = normalizePhone(req.body);
     const avatar = req.body.avatar ?? null;
+    const ville = req.body.ville ?? null;
+    const pays = req.body.pays ?? null;
+    const bio = req.body.bio ?? null;
 
     if (email) {
       const [existingEmailUsers] = await pool.execute(
@@ -67,19 +70,22 @@ const updateUser = async (req, res) => {
     }
 
     await pool.execute(
-      'UPDATE User SET firstName = ?, lastName = ?, email = ?, phone = ?, avatar = ? WHERE id = ?',
+      'UPDATE User SET firstName = ?, lastName = ?, email = ?, phone = ?, avatar = ?, ville = ?, pays = ?, bio = ? WHERE id = ?',
       [
         firstName ?? req.user.firstName,
         lastName ?? req.user.lastName,
         email ?? req.user.email,
         phone ?? req.user.phone,
         avatar ?? req.user.avatar,
+        ville ?? req.user.ville,
+        pays ?? req.user.pays,
+        bio ?? req.user.bio,
         req.user.id,
       ]
     );
 
     const [users] = await pool.execute(
-      'SELECT id, firstName, lastName, email, role, status, phone, avatar, createdAt, updatedAt FROM User WHERE id = ?',
+      'SELECT id, firstName, lastName, email, role, status, phone, avatar, ville, pays, bio, createdAt, updatedAt FROM User WHERE id = ?',
       [req.user.id]
     );
 
@@ -161,6 +167,30 @@ const getMyNotifications = async (req, res) => {
   }
 };
 
+const { uploadBuffer } = require('../config/cloudinary');
+
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Aucun fichier fourni' });
+    }
+
+    const result = await uploadBuffer(req.file.buffer, {
+      folder: 'hergo_avatars',
+    });
+
+    await pool.execute('UPDATE User SET avatar = ? WHERE id = ?', [result.secure_url, req.user.id]);
+
+    res.status(200).json({
+      message: 'Avatar mis à jour',
+      avatarUrl: result.secure_url,
+    });
+  } catch (error) {
+    console.error('Erreur lors du téléversement de l\'avatar:', error);
+    res.status(500).json({ message: 'Erreur interne du serveur' });
+  }
+};
+
 module.exports = {
   getMyProfile,
   updateUser,
@@ -168,4 +198,5 @@ module.exports = {
   getMyReservations,
   getMyReviews,
   getMyNotifications,
+  uploadAvatar,
 };

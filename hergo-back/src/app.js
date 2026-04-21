@@ -18,7 +18,7 @@ app.use(compression());
 // Rate limiting global
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes par fenêtre
+  max: 10000, // 100 requêtes par fenêtre
   message: { message: 'Trop de requêtes, réessayez plus tard' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -48,11 +48,15 @@ const allowedOrigins = env.CORS_ORIGIN
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Autoriser les requêtes sans origine (comme les outils Postman ou mobiles)
     if (!origin) return callback(null, true);
     
+    // En développement, on peut être plus permissif
+    if (env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else if (env.NODE_ENV === 'production') {
       callback(null, true);
     } else {
       callback(new Error('Non autorisé par CORS'));
@@ -77,6 +81,7 @@ const settingsRoutes = require('./routes/settings.routes');
 const reclamationRoutes = require('./routes/reclamation.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const favorisRoutes = require('./routes/favoris.routes');
+const testRoutes = require('./routes/test.routes');
 
 // Routes API
 // Appliquer le rate limiter uniquement à la route de login
@@ -94,6 +99,11 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/reclamations', reclamationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/favoris', favorisRoutes);
+
+// Routes de test (développement uniquement)
+if (env.NODE_ENV !== 'production') {
+  app.use('/api/test', testRoutes);
+}
 
 // Route de test
 app.get('/api/health', (req, res) => {

@@ -442,6 +442,22 @@
   text-decoration: underline;
 }
 
+.successIcon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
 /* ---- CGU checkbox ---- */
 .checkboxField {
   display: flex;

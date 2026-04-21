@@ -39,13 +39,7 @@ const UserRepository = {
   update: async (id, data) => {
     return await prisma.user.update({
       where: { id: parseInt(id) },
-      data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        avatar: data.avatar,
-      },
+      data: { ...data },
     });
   },
 

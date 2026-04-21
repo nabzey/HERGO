@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import './core/i18n'; // initialize i18n
 
 // Existing pages
 import WelcomePage from './pages/acceuil/WelcomePage';
@@ -27,6 +29,7 @@ import ModifierLogementPage from './pages/hote/ModifierLogementPage';
 import MesLogementsPage from './pages/hote/MesLogementsPage';
 import ReservationsRecuesPage from './pages/hote/ReservationsRecuesPage';
 import CalendrierPage from './pages/hote/CalendrierPage';
+import HoteProfilPage from './pages/hote/HoteProfilPage';
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -41,6 +44,26 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <BrowserRouter>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#252019',
+            color: '#f0ebe3',
+            border: '1px solid rgba(201, 165, 112, 0.25)',
+            borderRadius: '10px',
+            fontSize: '0.875rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          },
+          success: {
+            iconTheme: { primary: '#c9a570', secondary: '#1c1917' },
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+          },
+        }}
+      />
       <Routes>
         {/* Pages publiques */}
         <Route path="/" element={<WelcomePage />} />
@@ -71,7 +94,7 @@ function App() {
             <MesReservationsPage />
           </ProtectedRoute>
         } />
-        <Route path="/reservation" element={
+        <Route path="/reservation/:id" element={
           <ProtectedRoute allowedRoles={['Voyageur']}>
             <ReservationPage />
           </ProtectedRoute>
@@ -111,6 +134,11 @@ function App() {
         <Route path="/hote/dashboard" element={
           <ProtectedRoute allowedRoles={['Hôte']}>
             <HoteDashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/hote/profil" element={
+          <ProtectedRoute allowedRoles={['Hôte']}>
+            <HoteProfilPage />
           </ProtectedRoute>
         } />
         <Route path="/hote/ajouter" element={

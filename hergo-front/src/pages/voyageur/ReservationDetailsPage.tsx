@@ -136,7 +136,7 @@ const ReservationDetailsPage = () => {
               <h2 className={styles.sectionTitle}>Hébergement</h2>
               
               <div className={styles.logementHeader}>
-                <img src="/placeholder.jpg" alt={reservation.titre} className={styles.logementImage} />
+                <img src={reservation.imageUrl || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=400"} alt={reservation.titre} className={styles.logementImage} />
                 <div className={styles.logementInfo}>
                   <h3 className={styles.logementName}>{reservation.titre}</h3>
                   <p className={styles.logementLocation}>

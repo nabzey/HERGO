@@ -4,6 +4,8 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../core/api/api';
 import { usersMockApi, type MockUserRecord } from '../../services/usersMockApi';
 import dStyles from '../../components/DashboardLayout.module.css';
+import Modal from '../../components/Modal';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './GestionUtilisateursPage.module.css';
 
 interface User {
@@ -50,11 +52,13 @@ const ADMIN_LINKS = [
 ];
 
 const GestionUtilisateursPage = () => {
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('tous');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -62,9 +66,18 @@ const GestionUtilisateursPage = () => {
       try {
         const data = await adminApi.getAllUsers() as ApiUser[];
         usersMockApi.seedFromApi(data);
-        setUsers(usersMockApi.getAll().map(mapMockUser));
+        
+        // Filtrer les admins de la liste (on ne suit que les voyageurs et hôtes)
+        const allUsers = usersMockApi.getAll()
+          .map(mapMockUser)
+          .filter(u => u.role !== 'Admin');
+          
+        setUsers(allUsers);
       } catch (err: unknown) {
-        setUsers(usersMockApi.getAll().map(mapMockUser));
+        const allUsers = usersMockApi.getAll()
+          .map(mapMockUser)
+          .filter(u => u.role !== 'Admin');
+        setUsers(allUsers);
         const error = err as Error;
         setError(error.message || 'Affichage des utilisateurs depuis la base mock locale');
       } finally {
@@ -89,7 +102,7 @@ const GestionUtilisateursPage = () => {
     }
 
     usersMockApi.update(id, { status: 'SUSPENDU' });
-    setUsers(usersMockApi.getAll().map(mapMockUser));
+    setUsers(usersMockApi.getAll().map(mapMockUser).filter(u => u.role !== 'Admin'));
   };
 
   const handleReactivate = async (id: number) => {
@@ -101,12 +114,12 @@ const GestionUtilisateursPage = () => {
     }
 
     usersMockApi.update(id, { status: 'ACTIF' });
-    setUsers(usersMockApi.getAll().map(mapMockUser));
+    setUsers(usersMockApi.getAll().map(mapMockUser).filter(u => u.role !== 'Admin'));
   };
 
   if (loading) {
     return (
-      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+      <DashboardLayout links={ADMIN_LINKS} role="admin">
         <div className={dStyles.pageHeader}>
           <h1 className={dStyles.pageTitle}>Gestion des Utilisateurs</h1>
           <p>Chargement des utilisateurs...</p>
@@ -116,10 +129,13 @@ const GestionUtilisateursPage = () => {
   }
 
   return (
-    <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+    <DashboardLayout 
+      links={ADMIN_LINKS} 
+      role="admin" 
+    >
       <div className={dStyles.pageHeader}>
         <h1 className={dStyles.pageTitle}>Gestion des Utilisateurs</h1>
-        <p className={dStyles.pageSubtitle}>{users.length} utilisateurs inscrits</p>
+        <p className={dStyles.pageSubtitle}>{users.length} utilisateurs enregistrés (Voyageurs & Hôtes)</p>
       </div>
 
       {error && (
@@ -163,7 +179,7 @@ const GestionUtilisateursPage = () => {
           </thead>
           <tbody>
             {filtered.map((u) => (
-              <tr key={u.id}>
+              <tr key={u.id} onClick={() => setSelectedUser(u)} style={{ cursor: 'pointer' }}>
                 <td>
                   <div className={dStyles.avatarRow}>
                     <img src={u.avatar} alt={u.name} className={dStyles.avatarSmall} />
@@ -193,6 +209,76 @@ const GestionUtilisateursPage = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Détails de l'utilisateur Modal */}
+      <Modal
+        isOpen={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        title="Détails de l'utilisateur"
+        size="medium"
+      >
+        {selectedUser && (
+          <div className={styles.userDetail}>
+            <div className={styles.detailHeader}>
+              <img src={selectedUser.avatar} alt={selectedUser.name} className={styles.detailAvatar} />
+              <div>
+                <h3 className={styles.detailName}>{selectedUser.name}</h3>
+                <p className={styles.detailEmail}>{selectedUser.email}</p>
+                <span className={`${dStyles.badge} ${selectedUser.role === 'Admin' ? dStyles.badgeGray : selectedUser.role === 'Hôte' ? dStyles.badgeYellow : dStyles.badgeGreen}`}>
+                  {selectedUser.role}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.detailGrid}>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>ID Utilisateur</span>
+                <span className={styles.detailValue}>#USR-{selectedUser.id.toString().padStart(5, '0')}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Date d'inscription</span>
+                <span className={styles.detailValue}>{selectedUser.joinDate}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Réservations</span>
+                <span className={styles.detailValue}>{selectedUser.reservations}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Statut du compte</span>
+                <span className={`${dStyles.badge} ${selectedUser.status === 'actif' ? dStyles.badgeGreen : selectedUser.status === 'suspendu' ? dStyles.badgeRed : dStyles.badgeGray}`}>
+                  {selectedUser.status}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.detailActions}>
+              {selectedUser.status !== 'suspendu' ? (
+                <button 
+                  className={`${styles.actionBtn} ${styles.btnSuspend}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSuspend(selectedUser.id);
+                    setSelectedUser({...selectedUser, status: 'suspendu'});
+                  }}
+                >
+                  Suspendre le compte
+                </button>
+              ) : (
+                <button 
+                  className={`${styles.actionBtn} ${styles.btnReactivate}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReactivate(selectedUser.id);
+                    setSelectedUser({...selectedUser, status: 'actif'});
+                  }}
+                >
+                  Réactiver le compte
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </DashboardLayout>
   );
 };

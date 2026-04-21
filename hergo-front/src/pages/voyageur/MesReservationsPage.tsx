@@ -147,7 +147,7 @@ const MesReservationsPage = () => {
                 style={{ cursor: 'pointer' }}
               >
                 <div className={styles.cardImg}>
-                  <img src="/placeholder.jpg" alt={r.titre} className={styles.img} />
+                  <img src={r.imageUrl || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=400"} alt={r.titre} className={styles.img} />
                 </div>
                 <div className={styles.cardBody}>
                   <div className={styles.cardTop}>

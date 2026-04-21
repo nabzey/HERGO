@@ -13,6 +13,8 @@ const quotedIdentifiers = [
   'Notification',
   'Reclamation',
   'UserSettings',
+  'Payment',
+  'Favori',
   'firstName',
   'lastName',
   'createdAt',
@@ -21,6 +23,11 @@ const quotedIdentifiers = [
   'idVoyageur',
   'idProprietaire',
   'idLogement',
+  'idReservation',
+  'stripePaymentId',
+  'paymentMethod',
+  'amount',
+  'currency',
   'idUser',
   'dateDebut',
   'dateFin',
@@ -31,6 +38,32 @@ const quotedIdentifiers = [
   'reservationNotifications',
   'departureReminders',
   'monthlyNewsletter',
+  'language',
+  'currency',
+  'theme',
+  'resetOtp',
+  'resetOtpExpires',
+  'id',
+  'email',
+  'role',
+  'status',
+  'statut',
+  'phone',
+  'avatar',
+  'idProprietaire',
+  'idLogement',
+  'idVoyageur',
+  'prixJour',
+  'prixTotal',
+  'dateDebut',
+  'dateFin',
+  'nombrePersonnes',
+  'ville',
+  'pays',
+  'titre',
+  'description',
+  'image',
+  'type',
 ];
 
 const keyAliases = {
@@ -67,9 +100,12 @@ const quoteIdentifiers = (query) => {
   let transformed = query;
 
   for (const identifier of quotedIdentifiers) {
+    const quoted = `"${identifier}"`;
+    if (transformed.includes(quoted)) continue;
+    
     transformed = transformed.replace(
       new RegExp(`\\b${identifier}\\b`, 'g'),
-      `"${identifier}"`
+      quoted
     );
   }
 

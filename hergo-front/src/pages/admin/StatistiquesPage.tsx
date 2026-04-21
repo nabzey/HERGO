@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LayoutGrid, Users, Home, ShieldCheck, BarChart2, TrendingUp } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminApi } from '../../core/api/api';
 import dStyles from '../../components/DashboardLayout.module.css';
@@ -47,7 +48,7 @@ const StatistiquesPage = () => {
 
   if (loading) {
     return (
-      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+      <DashboardLayout links={ADMIN_LINKS} role="admin">
         <div className={dStyles.pageHeader}>
           <h1 className={dStyles.pageTitle}>Statistiques</h1>
           <p>Chargement des statistiques...</p>
@@ -58,7 +59,7 @@ const StatistiquesPage = () => {
 
   if (!stats) {
     return (
-      <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+      <DashboardLayout links={ADMIN_LINKS} role="admin">
         <div className={dStyles.pageHeader}>
           <h1 className={dStyles.pageTitle}>Statistiques</h1>
           <p>Aucune donnée disponible</p>
@@ -78,7 +79,7 @@ const StatistiquesPage = () => {
   ];
 
   return (
-    <DashboardLayout links={ADMIN_LINKS} role="admin" userName="Aissatou Fall" userAvatar="https://i.pravatar.cc/36?u=aissatou">
+    <DashboardLayout links={ADMIN_LINKS} role="admin">
       <div className={dStyles.pageHeader}>
         <h1 className={dStyles.pageTitle}>Statistiques</h1>
         <p className={dStyles.pageSubtitle}>Analyse de performance de la plateforme</p>

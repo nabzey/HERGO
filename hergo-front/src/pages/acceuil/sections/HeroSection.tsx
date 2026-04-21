@@ -122,6 +122,7 @@ const HeroSection = () => {
                 type="date"
                 className={styles.input}
                 value={arrivee}
+                onClick={(e) => (e.target as HTMLInputElement).showPicker && (e.target as HTMLInputElement).showPicker()}
                 onChange={(e) => setArrivee(e.target.value)}
               />
             </div>
@@ -135,6 +136,7 @@ const HeroSection = () => {
                 type="date"
                 className={styles.input}
                 value={depart}
+                onClick={(e) => (e.target as HTMLInputElement).showPicker && (e.target as HTMLInputElement).showPicker()}
                 onChange={(e) => setDepart(e.target.value)}
               />
             </div>

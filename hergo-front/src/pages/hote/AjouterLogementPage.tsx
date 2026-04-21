@@ -62,7 +62,7 @@ const AjouterLogementPage = () => {
         adresse: formData.adresse,
         ville: formData.ville,
         pays: 'Sénégal',
-        statut: 'BROUILLON',
+        statut: 'EN_ATTENTE',
       };
 
       const logement = await logementsApi.create(logementData) as { id: number };
@@ -232,6 +232,7 @@ const AjouterLogementPage = () => {
               type="file"
               multiple
               accept="image/*"
+              capture="environment"
               className={styles.hiddenInput}
               onChange={handleImageChange}
             />

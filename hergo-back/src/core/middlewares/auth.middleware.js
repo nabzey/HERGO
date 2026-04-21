@@ -1,14 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../../config/prisma');
+const { AuthenticationError } = require('../../utils/errors');
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : undefined;
     if (!token) {
-      const error = new Error('Token requis');
-      error.name = 'AuthenticationError';
-      error.statusCode = 401;
-      return next(error);
+      return next(new AuthenticationError('Token requis'));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -17,27 +15,18 @@ const authMiddleware = async (req, res, next) => {
     });
 
     if (!user) {
-      const error = new Error('Utilisateur non trouvé');
-      error.name = 'AuthenticationError';
-      error.statusCode = 401;
-      return next(error);
+      return next(new AuthenticationError('Utilisateur non trouvé'));
     }
 
     if (user.status === 'BANNI') {
-      const error = new Error('Compte banni');
-      error.name = 'AuthenticationError';
-      error.statusCode = 403;
-      return next(error);
+      return next(new AuthenticationError('Compte banni'));
     }
 
     req.user = user;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      const authError = new Error('Token invalide ou expiré');
-      authError.name = 'AuthenticationError';
-      authError.statusCode = 401;
-      return next(authError);
+      return next(new AuthenticationError('Token invalide ou expiré'));
     }
     next(error);
   }

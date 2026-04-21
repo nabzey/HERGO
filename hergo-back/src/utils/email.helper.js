@@ -94,6 +94,29 @@ const emailHelper = {
       textContent: `Bonjour ${firstName}, vous avez recu une nouvelle reservation pour ${reservationDetails.titre || 'votre logement'}.`,
       tags: ['host-notification'],
     }),
+
+  sendOtpEmail: async (email, firstName, otp) =>
+    sendEmailSafely({
+      to: {
+        email,
+        name: firstName,
+      },
+      subject: 'Votre code de réinitialisation de mot de passe - Hergo',
+      htmlContent: `
+        <html>
+          <body>
+            <h2>Bonjour ${firstName},</h2>
+            <p>Vous avez demandé la réinitialisation de votre mot de passe Hergo.</p>
+            <p>Voici votre code de vérification (OTP) :</p>
+            <h1 style="font-size: 32px; letter-spacing: 5px; color: #c9a570;">${otp}</h1>
+            <p>Ce code est valable pendant 15 minutes.</p>
+            <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
+          </body>
+        </html>
+      `,
+      textContent: `Bonjour ${firstName}, votre code de réinitialisation Hergo est : ${otp}`,
+      tags: ['password-reset'],
+    }),
 };
 
 module.exports = emailHelper;

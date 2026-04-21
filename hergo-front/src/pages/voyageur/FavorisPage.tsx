@@ -97,7 +97,7 @@ const FavorisPage = () => {
               <div key={fav.id} className={styles.card}>
                 <div className={styles.cardImage}>
                   <img 
-                    src={fav.imageUrl || '/placeholder.jpg'} 
+                    src={fav.imageUrl || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=400'} 
                     alt={fav.titre} 
                     className={styles.img}
                   />

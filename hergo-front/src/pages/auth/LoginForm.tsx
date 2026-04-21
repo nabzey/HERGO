@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardRoute, useAuth } from '../../hooks/useAuth';
+import ForgotPasswordFlow from './ForgotPasswordFlow';
 import styles from './AuthPage.module.css';
 
 interface LoginFormProps {
@@ -13,6 +14,7 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -30,8 +32,13 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
     }
   };
 
+  if (showForgotPassword) {
+    return <ForgotPasswordFlow onBackToLogin={() => setShowForgotPassword(false)} />;
+  }
+
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {/* ... existing form content ... */}
       {error && (
         <div style={{
           backgroundColor: '#fef2f2',
@@ -45,6 +52,7 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
           {error}
         </div>
       )}
+
       <h2 className={styles.formTitle}>Bon retour ! 👋</h2>
       <p className={styles.formSubtitle}>
         Connectez-vous pour accéder à votre compte HERGO
@@ -100,7 +108,7 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
 
       {/* Mot de passe oublié */}
       <div className={styles.forgotLink}>
-        <button type="button" className={styles.forgotBtn}>
+        <button type="button" className={styles.forgotBtn} onClick={() => setShowForgotPassword(true)}>
           Mot de passe oublié ?
         </button>
       </div>

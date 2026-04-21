@@ -10,6 +10,7 @@ const {
   manageImages,
   manageEquipements,
   manageEspaces,
+  getMyLogements,
 } = require('../controllers/logement.controller');
 const { authMiddleware, adminMiddleware, hostMiddleware } = require('../core/middlewares/auth.middleware');
 const { validate, validateQuery } = require('../helpers/validation');
@@ -31,6 +32,7 @@ const upload = multer({
 });
 
 router.get('/', validateQuery('pagination'), getAllLogements);
+router.get('/me', authMiddleware, getMyLogements);
 router.get('/:id', getLogementById);
 router.post('/', authMiddleware, hostMiddleware, validate('createLogement'), createLogement);
 router.put('/:id', authMiddleware, validate('updateLogement'), updateLogement);

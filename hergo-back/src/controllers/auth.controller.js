@@ -60,9 +60,45 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
+// Mot de passe oublié
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Vérifier OTP
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    const result = await authService.verifyOtp(email, otp);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Réinitialiser le mot de passe
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const result = await authService.resetPassword(email, otp, newPassword);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   refreshToken,
   getCurrentUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

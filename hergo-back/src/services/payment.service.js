@@ -124,19 +124,36 @@ const paymentService = {
     }
   },
 
-  confirmPayment: async (reservationId) => {
+  simulateMobileMoney: async (reservationId, amount, method, phoneNumber) => {
     try {
-      await pool.execute(`
-        UPDATE Payment SET status = 'COMPLETE', updatedAt = CURRENT_TIMESTAMP(3)
-        WHERE idReservation = ? AND status = 'EN_ATTENTE'
+      // Attendre 2 secondes pour simuler le processus sur le téléphone
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const [reservations] = await pool.execute(`
+        SELECT * FROM Reservation WHERE id = ?
       `, [reservationId]);
 
+      if (reservations.length === 0) {
+        throw new Error('Réservation non trouvée');
+      }
+
+      // Créer le paiement en statut COMPLETE
+      await pool.execute(`
+        INSERT INTO Payment (idReservation, amount, currency, status, paymentMethod, createdAt, updatedAt)
+        VALUES (?, ?, 'XOF', 'COMPLETE', ?, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+      `, [reservationId, amount, method]);
+
+      // Confirmer la réservation
       await pool.execute(`
         UPDATE Reservation SET statut = 'CONFIRME', updatedAt = CURRENT_TIMESTAMP(3)
         WHERE id = ?
       `, [reservationId]);
 
-      return { success: true };
+      return { 
+        success: true, 
+        message: `Paiement ${method} réussi pour le numéro ${phoneNumber}`,
+        transactionId: `SIM-${method}-${Date.now()}`
+      };
     } catch (error) {
       throw error;
     }
