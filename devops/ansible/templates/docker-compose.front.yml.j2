@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  hergo-front:
+    image: {{ dockerhub_username | default('zeynabba') }}/hergo:front
+    container_name: hergo_front_app
+    ports:
+      - "8080:80"
+    restart: unless-stopped

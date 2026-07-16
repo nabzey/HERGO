@@ -50,6 +50,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key.pem
           chmod 600 ~/.ssh/key.pem
+          cp ~/.ssh/key.pem ~/.ssh/TERRAFORM.pem
+          chmod 600 ~/.ssh/TERRAFORM.pem
 
       - name: Add EC2 to known hosts
         run: |
@@ -63,6 +65,9 @@ jobs:
       - name: Deploy with Ansible
         run: |
           cd devops/ansible
+          ansible-playbook -i inventory.ini playbook.yml \
+            --private-key ~/.ssh/key.pem
           ansible-playbook -i inventory.ini deploy.yml \
             --private-key ~/.ssh/key.pem \
             -e "dockerhub_username=${{ secrets.DOCKERHUB_USERNAME }}"
+

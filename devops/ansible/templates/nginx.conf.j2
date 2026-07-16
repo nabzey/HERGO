@@ -4,7 +4,7 @@ server {
 
     # Reverse proxy for backend API
     location /api {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://{{ back_private_ip }}:5000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

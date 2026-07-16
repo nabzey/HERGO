@@ -11,19 +11,108 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Utiliser le VPC par défaut d'AWS pour simplifier et éviter les frais réseau supplémentaires
-resource "aws_default_vpc" "default" {}
+# --- VPC ---
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
-# Utiliser les subnets par défaut
-resource "aws_default_subnet" "default_az1" {
-  availability_zone = "${var.aws_region}a"
+  tags = {
+    Name = "hergo-vpc"
+  }
 }
 
-# --- Security Group unique pour l'instance ---
-resource "aws_security_group" "hergo_sg" {
-  name        = "hergo-single-sg"
-  description = "Allow HTTP, HTTPS and SSH traffic"
-  vpc_id      = aws_default_vpc.default.id
+# --- Subnets ---
+resource "aws_subnet" "public" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "${var.aws_region}a"
+
+  tags = {
+    Name = "hergo-public-subnet"
+  }
+}
+
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "${var.aws_region}a"
+
+  tags = {
+    Name = "hergo-private-subnet"
+  }
+}
+
+# --- Gateways ---
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "hergo-igw"
+  }
+}
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "hergo-nat-eip"
+  }
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+
+  tags = {
+    Name = "hergo-nat-gateway"
+  }
+
+  depends_on = [aws_internet_gateway.igw]
+}
+
+# --- Route Tables ---
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "hergo-public-route-table"
+  }
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags = {
+    Name = "hergo-private-route-table"
+  }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
+}
+
+# --- Security Groups ---
+resource "aws_security_group" "front_sg" {
+  name        = "hergo-front-sg"
+  description = "Security Group for Frontend EC2"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     description = "HTTP"
@@ -49,22 +138,37 @@ resource "aws_security_group" "hergo_sg" {
     cidr_blocks = [var.admin_ip]
   }
 
-  # Optionnel : Port de l'API s'il n'est pas routé par Nginx (port 5000)
-  ingress {
-    description = "Express API"
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Optionnel : Port de preview Frontend (port 8080)
+  tags = {
+    Name = "hergo-front-sg"
+  }
+}
+
+resource "aws_security_group" "back_sg" {
+  name        = "hergo-back-sg"
+  description = "Security Group for Backend EC2"
+  vpc_id      = aws_vpc.main.id
+
   ingress {
-    description = "Frontend Preview"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Express API from Front"
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.front_sg.id]
+  }
+
+  ingress {
+    description     = "SSH from Front (Jump Host)"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.front_sg.id]
   }
 
   egress {
@@ -75,27 +179,122 @@ resource "aws_security_group" "hergo_sg" {
   }
 
   tags = {
-    Name = "hergo-security-group"
+    Name = "hergo-back-sg"
   }
 }
 
-# --- Instance EC2 unique (comme pour Voyage) ---
-resource "aws_instance" "web" {
-  ami           = "ami-0705383b065496f55" # Ubuntu Server 22.04 LTS dans la région eu-north-1 (Stockholm)
-  instance_type = var.instance_type
-  key_name      = var.key_name
-  subnet_id     = aws_default_subnet.default_az1.id
+resource "aws_security_group" "db_sg" {
+  name        = "hergo-db-sg"
+  description = "Security Group for DB EC2"
+  vpc_id      = aws_vpc.main.id
 
-  vpc_security_group_ids = [aws_security_group.hergo_sg.id]
+  ingress {
+    description     = "PostgreSQL from Back"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.back_sg.id]
+  }
 
-  # Allouer un disque de 20 Go (suffisant pour stocker les images Docker et la base de données)
+  ingress {
+    description     = "SSH from Front (Jump Host)"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.front_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "hergo-db-sg"
+  }
+}
+
+# --- EC2 Instances ---
+resource "aws_instance" "front" {
+  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.front_sg.id]
+  associate_public_ip_address = true
+
   root_block_device {
-    volume_size = 20
+    volume_size = 15
     volume_type = "gp3"
   }
 
   tags = {
-    Name = "hergo-ec2"
-    Role = "single-server"
+    Name = "hergo-front-ec2"
+    Role = "frontend"
   }
 }
+
+resource "aws_instance" "back" {
+  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  subnet_id                   = aws_subnet.private.id
+  vpc_security_group_ids      = [aws_security_group.back_sg.id]
+  associate_public_ip_address = false
+
+  root_block_device {
+    volume_size = 15
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name = "hergo-back-ec2"
+    Role = "backend"
+  }
+}
+
+resource "aws_instance" "db" {
+  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  subnet_id                   = aws_subnet.private.id
+  vpc_security_group_ids      = [aws_security_group.db_sg.id]
+  associate_public_ip_address = false
+
+  root_block_device {
+    volume_size = 15
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name = "hergo-db-ec2"
+    Role = "database"
+  }
+}
+
+# --- Auto-generate Ansible Inventory ---
+resource "local_file" "ansible_inventory" {
+  content = <<EOT
+[front]
+front_host ansible_host=${aws_instance.front.public_ip} ansible_user=ubuntu
+
+[back]
+back_host ansible_host=${aws_instance.back.private_ip} ansible_user=ubuntu
+
+[db]
+db_host ansible_host=${aws_instance.db.private_ip} ansible_user=ubuntu
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+[back:vars]
+ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q -i ~/.ssh/TERRAFORM.pem -o StrictHostKeyChecking=no ubuntu@${aws_instance.front.public_ip}"'
+
+[db:vars]
+ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q -i ~/.ssh/TERRAFORM.pem -o StrictHostKeyChecking=no ubuntu@${aws_instance.front.public_ip}"'
+EOT
+  filename = "${path.module}/../ansible/inventory.ini"
+}
+

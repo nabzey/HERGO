@@ -1,6 +1,6 @@
 ---
-- name: Setup Single Server (Docker + Nginx Reverse Proxy)
-  hosts: ec2
+- name: Install Docker on All Instances
+  hosts: all
   become: true
   tasks:
     - name: Update apt cache
@@ -74,6 +74,10 @@
         groups: docker
         append: yes
 
+- name: Setup Nginx Reverse Proxy on Front Instance
+  hosts: front
+  become: true
+  tasks:
     - name: Install Nginx and Certbot
       apt:
         name:

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  hergo-back:
+    image: {{ dockerhub_username | default('zeynabba') }}/hergo:back
+    container_name: hergo_back_app
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgres://{{ db_user | default('zeynab') }}:{{ db_password | default('nouveaumotdepasse') }}@{{ db_private_ip }}:5432/hergo?schema=public
+      JWT_SECRET: {{ jwt_secret | default('hergo-secret-key') }}
+      JWT_EXPIRES_IN: 24h
+      NODE_ENV: production
+      PORT: 5000
+      CLOUDINARY_CLOUD_NAME: "{{ cloudinary_cloud_name | default('') }}"
+      CLOUDINARY_API_KEY: "{{ cloudinary_api_key | default('') }}"
+      CLOUDINARY_API_SECRET: "{{ cloudinary_api_secret | default('') }}"
+      CLOUDINARY_FOLDER: hergo
+      BREVO_API_KEY: "{{ brevo_api_key | default('') }}"
+      BREVO_SENDER_EMAIL: "{{ brevo_sender_email | default('') }}"
+      CORS_ORIGIN: http://{{ front_public_ip }}
+    restart: unless-stopped

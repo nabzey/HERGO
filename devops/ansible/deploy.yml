@@ -1,27 +1,114 @@
-- name: Deploy Hergo App via Docker Compose
-  hosts: ec2
+---
+- name: Deploy Database Tier
+  hosts: db
   become: true
-
   vars:
-    project_path: /home/ubuntu/Hergo
-
+    project_path: /home/ubuntu/hergo
   tasks:
-    - name: Pull latest code from GitHub
-      git:
-        repo: 'https://github.com/nabzey/HERGO.git'
-        dest: "{{ project_path }}"
-        version: main
-        force: yes
+    - name: Create project directory
+      file:
+        path: "{{ project_path }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
 
-    - name: Pull Docker images (back + front)
-      command: docker compose -f docker-compose.prod.yaml pull
+    - name: Template out docker-compose for DB
+      template:
+        src: templates/docker-compose.db.yml.j2
+        dest: "{{ project_path }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Pull Database Docker images
+      command: docker compose pull
       args:
         chdir: "{{ project_path }}"
 
-    - name: Start all containers
-      command: docker compose -f docker-compose.prod.yaml up -d
+    - name: Start Database container
+      command: docker compose up -d
       args:
         chdir: "{{ project_path }}"
 
-    - name: Clean unused images
-      command: docker image prune -f
+- name: Deploy Backend Tier
+  hosts: back
+  become: true
+  vars:
+    project_path: /home/ubuntu/hergo
+  tasks:
+    - name: Create project directory
+      file:
+        path: "{{ project_path }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Template out docker-compose for Backend
+      template:
+        src: templates/docker-compose.back.yml.j2
+        dest: "{{ project_path }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+      vars:
+        db_private_ip: "{{ hostvars[groups['db'][0]].ansible_host }}"
+        front_public_ip: "{{ hostvars[groups['front'][0]].ansible_host }}"
+
+    - name: Pull Backend Docker images
+      command: docker compose pull
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Start Backend container (runs migrations & app)
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_path }}"
+
+- name: Deploy Frontend Tier
+  hosts: front
+  become: true
+  vars:
+    project_path: /home/ubuntu/hergo
+  tasks:
+    - name: Create project directory
+      file:
+        path: "{{ project_path }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Template out docker-compose for Frontend
+      template:
+        src: templates/docker-compose.front.yml.j2
+        dest: "{{ project_path }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Pull Frontend Docker images
+      command: docker compose pull
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Start Frontend container
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Update Nginx reverse proxy configuration
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/sites-available/hergo
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        back_private_ip: "{{ hostvars[groups['back'][0]].ansible_host }}"
+
+    - name: Restart Nginx to apply changes
+      systemd:
+        name: nginx
+        state: restarted
