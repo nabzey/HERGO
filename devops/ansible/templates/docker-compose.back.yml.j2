@@ -19,4 +19,6 @@ services:
       BREVO_API_KEY: "{{ brevo_api_key | default('') }}"
       BREVO_SENDER_EMAIL: "{{ brevo_sender_email | default('') }}"
       CORS_ORIGIN: http://{{ front_public_ip }}
+    volumes:
+      - ./payment.service.js:/app/src/services/payment.service.js
     restart: unless-stopped

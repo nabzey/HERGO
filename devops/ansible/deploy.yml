@@ -45,6 +45,14 @@
         group: ubuntu
         mode: '0755'
 
+    - name: Copy payment.service.js to backend host
+      copy:
+        src: ../../hergo-back/src/services/payment.service.js
+        dest: "{{ project_path }}/payment.service.js"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
     - name: Template out docker-compose for Backend
       template:
         src: templates/docker-compose.back.yml.j2
