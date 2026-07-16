@@ -11,108 +11,19 @@ provider "aws" {
   region = var.aws_region
 }
 
-# --- VPC ---
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+# --- VPC par défaut d'AWS (autorisé par les comptes restreints) ---
+resource "aws_default_vpc" "default" {}
 
-  tags = {
-    Name = "hergo-vpc"
-  }
-}
-
-# --- Subnets ---
-resource "aws_subnet" "public" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
+# --- Sous-réseau par défaut dans la zone de disponibilité A ---
+resource "aws_default_subnet" "default_az1" {
   availability_zone = "${var.aws_region}a"
-
-  tags = {
-    Name = "hergo-public-subnet"
-  }
 }
 
-resource "aws_subnet" "private" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "${var.aws_region}a"
-
-  tags = {
-    Name = "hergo-private-subnet"
-  }
-}
-
-# --- Gateways ---
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "hergo-igw"
-  }
-}
-
-resource "aws_eip" "nat" {
-  domain = "vpc"
-
-  tags = {
-    Name = "hergo-nat-eip"
-  }
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
-
-  tags = {
-    Name = "hergo-nat-gateway"
-  }
-
-  depends_on = [aws_internet_gateway.igw]
-}
-
-# --- Route Tables ---
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = {
-    Name = "hergo-public-route-table"
-  }
-}
-
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
-  }
-
-  tags = {
-    Name = "hergo-private-route-table"
-  }
-}
-
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.private.id
-  route_table_id = aws_route_table.private.id
-}
-
-# --- Security Groups ---
+# --- Security Groups (Isolation 3-Tier virtuelle) ---
 resource "aws_security_group" "front_sg" {
   name        = "hergo-front-sg"
   description = "Security Group for Frontend EC2"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_default_vpc.default.id
 
   ingress {
     description = "HTTP"
@@ -153,7 +64,7 @@ resource "aws_security_group" "front_sg" {
 resource "aws_security_group" "back_sg" {
   name        = "hergo-back-sg"
   description = "Security Group for Backend EC2"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_default_vpc.default.id
 
   ingress {
     description     = "Express API from Front"
@@ -186,7 +97,7 @@ resource "aws_security_group" "back_sg" {
 resource "aws_security_group" "db_sg" {
   name        = "hergo-db-sg"
   description = "Security Group for DB EC2"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_default_vpc.default.id
 
   ingress {
     description     = "PostgreSQL from Back"
@@ -221,7 +132,7 @@ resource "aws_instance" "front" {
   ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
   instance_type               = var.instance_type
   key_name                    = var.key_name
-  subnet_id                   = aws_subnet.public.id
+  subnet_id                   = aws_default_subnet.default_az1.id
   vpc_security_group_ids      = [aws_security_group.front_sg.id]
   associate_public_ip_address = true
 
@@ -240,9 +151,9 @@ resource "aws_instance" "back" {
   ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
   instance_type               = var.instance_type
   key_name                    = var.key_name
-  subnet_id                   = aws_subnet.private.id
+  subnet_id                   = aws_default_subnet.default_az1.id
   vpc_security_group_ids      = [aws_security_group.back_sg.id]
-  associate_public_ip_address = false
+  associate_public_ip_address = true # Nécessaire pour télécharger les images Docker sans NAT Gateway
 
   root_block_device {
     volume_size = 15
@@ -259,9 +170,9 @@ resource "aws_instance" "db" {
   ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
   instance_type               = var.instance_type
   key_name                    = var.key_name
-  subnet_id                   = aws_subnet.private.id
+  subnet_id                   = aws_default_subnet.default_az1.id
   vpc_security_group_ids      = [aws_security_group.db_sg.id]
-  associate_public_ip_address = false
+  associate_public_ip_address = true # Nécessaire pour télécharger l'image PostgreSQL sans NAT Gateway
 
   root_block_device {
     volume_size = 15
@@ -274,7 +185,7 @@ resource "aws_instance" "db" {
   }
 }
 
-# --- Auto-generate Ansible Inventory ---
+# --- Auto-génération de l'inventaire Ansible ---
 resource "local_file" "ansible_inventory" {
   content = <<EOT
 [front]
@@ -297,4 +208,3 @@ ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q -i ~/.ssh/TERRAFORM.pe
 EOT
   filename = "${path.module}/../ansible/inventory.ini"
 }
-
