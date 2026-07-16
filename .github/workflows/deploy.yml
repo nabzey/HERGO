@@ -46,9 +46,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH key
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key.pem
+          echo "$SSH_KEY" > ~/.ssh/key.pem
           chmod 600 ~/.ssh/key.pem
           cp ~/.ssh/key.pem ~/.ssh/TERRAFORM.pem
           chmod 600 ~/.ssh/TERRAFORM.pem
