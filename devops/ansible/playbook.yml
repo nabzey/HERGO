@@ -93,6 +93,8 @@
         owner: root
         group: root
         mode: '0644'
+      vars:
+        back_private_ip: "{{ hostvars[groups['back'][0]].ansible_host }}"
 
     - name: Enable Nginx site for Hergo
       file:

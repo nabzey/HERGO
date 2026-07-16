@@ -2,7 +2,7 @@ const { pool } = require('../config/db');
 const Stripe = require('stripe');
 const env = require('../config/env');
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || env.STRIPE_SECRET_KEY || 'dummy_stripe_key');
 const DEPOSIT_PERCENTAGE = 0.30; // 30% de acompte
 
 const paymentService = {
