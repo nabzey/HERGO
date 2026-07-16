@@ -1,0 +1,27 @@
+- name: Deploy Hergo App via Docker Compose
+  hosts: ec2
+  become: true
+
+  vars:
+    project_path: /home/ubuntu/Hergo
+
+  tasks:
+    - name: Pull latest code from GitHub
+      git:
+        repo: 'https://github.com/nabzey/HERGO.git'
+        dest: "{{ project_path }}"
+        version: main
+        force: yes
+
+    - name: Pull Docker images (back + front)
+      command: docker compose -f docker-compose.prod.yaml pull
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Start all containers
+      command: docker compose -f docker-compose.prod.yaml up -d
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: Clean unused images
+      command: docker image prune -f

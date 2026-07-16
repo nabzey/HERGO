@@ -1,0 +1,68 @@
+name: CI/CD - Hergo (Build, Push & Deploy)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ─── JOB 1 : Build & Push les images Docker Hub ───────────────────────────
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hergo-back
+          file: ./hergo-back/Dockerfile
+          push: true
+          tags: zeynabba/hergo:back
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hergo-front
+          file: ./hergo-front/Dockerfile
+          push: true
+          tags: zeynabba/hergo:front
+          build-args: |
+            VITE_API_BASE_URL=/api
+
+  # ─── JOB 2 : Déploiement via Ansible (même approche que VOYAGE-221) ────────
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key.pem
+          chmod 600 ~/.ssh/key.pem
+
+      - name: Add EC2 to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Ansible
+        run: |
+          sudo apt update -y
+          sudo apt install ansible -y
+
+      - name: Deploy with Ansible
+        run: |
+          cd devops/ansible
+          ansible-playbook -i inventory.ini deploy.yml \
+            --private-key ~/.ssh/key.pem \
+            -e "dockerhub_username=${{ secrets.DOCKERHUB_USERNAME }}"

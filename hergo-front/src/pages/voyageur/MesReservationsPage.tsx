@@ -23,6 +23,7 @@ interface Reservation {
   titre: string;
   ville: string;
   pays: string;
+  imageUrl?: string;
 }
 
 type FilterType = 'toutes' | 'confirmée' | 'en attente' | 'annulée';

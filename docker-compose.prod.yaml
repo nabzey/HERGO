@@ -1,0 +1,49 @@
+services:
+  hergo-back:
+    image: zeynabba/hergo:back
+    container_name: hergo_back_app
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-zeynab}:${DB_PASSWORD:-nouveaumotdepasse}@hergo-db:5432/hergo?schema=public
+      JWT_SECRET: ${JWT_SECRET:-hergo-secret-key}
+      JWT_EXPIRES_IN: 24h
+      NODE_ENV: production
+      PORT: 5000
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: hergo
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-}
+      CORS_ORIGIN: http://${EC2_HOST:-localhost}
+    depends_on:
+      hergo-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  hergo-front:
+    image: zeynabba/hergo:front
+    container_name: hergo_front_app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  hergo-db:
+    image: postgres:16
+    container_name: hergo_postgres
+    environment:
+      POSTGRES_DB: hergo
+      POSTGRES_USER: ${DB_USER:-zeynab}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nouveaumotdepasse}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zeynab} -d hergo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pg_data:

@@ -1,0 +1,4 @@
+aws_region    = "eu-west-3"
+instance_type = "t2.micro"
+key_name      = "hergo-key"
+admin_ip      = "8.8.8.8/32" # Replace with your own public IP for SSH access

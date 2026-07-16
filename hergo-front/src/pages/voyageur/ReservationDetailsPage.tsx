@@ -28,6 +28,7 @@ interface Reservation {
   titre: string;
   ville: string;
   pays: string;
+  imageUrl?: string;
 }
 
 const ReservationDetailsPage = () => {

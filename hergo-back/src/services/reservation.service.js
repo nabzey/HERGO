@@ -70,7 +70,8 @@ const reservationService = {
         query = `
           SELECT r.*,
                  u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-                 l.id as logementId, l.titre, l.ville, l.pays
+                 l.id as logementId, l.titre, l.ville, l.pays,
+                 (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
           FROM Reservation r
           LEFT JOIN User u ON r.idVoyageur = u.id
           LEFT JOIN Logement l ON r.idLogement = l.id
@@ -86,7 +87,8 @@ const reservationService = {
         query = `
           SELECT r.*,
                  u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-                 l.id as logementId, l.titre, l.ville, l.pays
+                 l.id as logementId, l.titre, l.ville, l.pays,
+                 (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
           FROM Reservation r
           LEFT JOIN User u ON r.idVoyageur = u.id
           LEFT JOIN Logement l ON r.idLogement = l.id
@@ -102,7 +104,8 @@ const reservationService = {
         query = `
           SELECT r.*,
                  u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-                 l.id as logementId, l.titre, l.ville, l.pays
+                 l.id as logementId, l.titre, l.ville, l.pays,
+                 (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
           FROM Reservation r
           LEFT JOIN User u ON r.idVoyageur = u.id
           LEFT JOIN Logement l ON r.idLogement = l.id
@@ -129,7 +132,8 @@ const reservationService = {
       const [reservations] = await pool.execute(`
         SELECT r.*,
                u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-               l.id as logementId, l.titre, l.ville, l.pays
+               l.id as logementId, l.titre, l.ville, l.pays,
+               (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
         FROM Reservation r
         LEFT JOIN User u ON r.idVoyageur = u.id
         LEFT JOIN Logement l ON r.idLogement = l.id
@@ -196,7 +200,8 @@ const reservationService = {
       const [newReservations] = await pool.execute(`
         SELECT r.*,
                u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-               l.id as logementId, l.titre, l.ville, l.pays
+               l.id as logementId, l.titre, l.ville, l.pays,
+               (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
         FROM Reservation r
         LEFT JOIN User u ON r.idVoyageur = u.id
         LEFT JOIN Logement l ON r.idLogement = l.id
@@ -245,7 +250,8 @@ const reservationService = {
       const [updatedReservations] = await pool.execute(`
         SELECT r.*,
                u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-               l.id as logementId, l.titre, l.ville, l.pays
+               l.id as logementId, l.titre, l.ville, l.pays,
+               (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
         FROM Reservation r
         LEFT JOIN User u ON r.idVoyageur = u.id
         LEFT JOIN Logement l ON r.idLogement = l.id
@@ -299,7 +305,8 @@ const reservationService = {
       const [updatedReservations] = await pool.execute(`
         SELECT r.*,
                u.id as voyageurId, u.firstName, u.lastName, u.email, u.phone,
-               l.id as logementId, l.titre, l.ville, l.pays
+               l.id as logementId, l.titre, l.ville, l.pays,
+               (SELECT url FROM Image WHERE idLogement = l.id LIMIT 1) as imageUrl
         FROM Reservation r
         LEFT JOIN User u ON r.idVoyageur = u.id
         LEFT JOIN Logement l ON r.idLogement = l.id
