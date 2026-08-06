@@ -11,6 +11,23 @@ provider "aws" {
   region = var.aws_region
 }
 
+# --- Recherche dynamique de la derniere AMI Ubuntu 22.04 LTS (Canonical) ---
+# Evite de coder en dur un ID qui devient invalide quand l'image est depreciee.
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd*/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # --- VPC par défaut d'AWS (autorisé par les comptes restreints) ---
 resource "aws_default_vpc" "default" {}
 
@@ -129,7 +146,7 @@ resource "aws_security_group" "db_sg" {
 
 # --- EC2 Instances ---
 resource "aws_instance" "front" {
-  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  ami                         = data.aws_ami.ubuntu.id # Ubuntu 22.04 LTS (recherche dynamique)
   instance_type               = var.instance_type
   key_name                    = var.key_name
   subnet_id                   = aws_default_subnet.default_az1.id
@@ -148,7 +165,7 @@ resource "aws_instance" "front" {
 }
 
 resource "aws_instance" "back" {
-  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  ami                         = data.aws_ami.ubuntu.id # Ubuntu 22.04 LTS (recherche dynamique)
   instance_type               = var.instance_type
   key_name                    = var.key_name
   subnet_id                   = aws_default_subnet.default_az1.id
@@ -167,7 +184,7 @@ resource "aws_instance" "back" {
 }
 
 resource "aws_instance" "db" {
-  ami                         = "ami-0705383b065496f55" # Ubuntu 22.04 LTS in eu-north-1
+  ami                         = data.aws_ami.ubuntu.id # Ubuntu 22.04 LTS (recherche dynamique)
   instance_type               = var.instance_type
   key_name                    = var.key_name
   subnet_id                   = aws_default_subnet.default_az1.id
